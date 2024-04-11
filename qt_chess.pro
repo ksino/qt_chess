@@ -18,12 +18,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    positions_truct.cpp
+    positions_truct.cpp \
+    board.cpp \
 
 HEADERS += \
     const_data.h \
     mainwindow.h \
-    positions_truct.h
+    positions_truct.h \
+    board.h \
 
 FORMS += \
     mainwindow.ui
