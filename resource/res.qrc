@@ -1,2 +1,36 @@
-<!DOCTYPE RCC>
-<RCC version="1.0"/>
+<RCC>
+    <qresource prefix="/">
+        <file>sounds/capture.wav</file>
+        <file>sounds/capture2.wav</file>
+        <file>sounds/check.wav</file>
+        <file>sounds/check2.wav</file>
+        <file>sounds/click.wav</file>
+        <file>sounds/draw.wav</file>
+        <file>sounds/illegal.wav</file>
+        <file>sounds/loss.wav</file>
+        <file>sounds/move.wav</file>
+        <file>sounds/move2.wav</file>
+        <file>sounds/newgame.wav</file>
+        <file>sounds/win.wav</file>
+        <file>images/ba.gif</file>
+        <file>images/bb.gif</file>
+        <file>images/bc.gif</file>
+        <file>images/bk.gif</file>
+        <file>images/bkm.gif</file>
+        <file>images/bn.gif</file>
+        <file>images/board.jpg</file>
+        <file>images/bp.gif</file>
+        <file>images/br.gif</file>
+        <file>images/oo.gif</file>
+        <file>images/oos.gif</file>
+        <file>images/ra.gif</file>
+        <file>images/rb.gif</file>
+        <file>images/rc.gif</file>
+        <file>images/rk.gif</file>
+        <file>images/rkm.gif</file>
+        <file>images/rn.gif</file>
+        <file>images/rp.gif</file>
+        <file>images/rr.gif</file>
+        <file>images/thinking.gif</file>
+    </qresource>
+</RCC>
