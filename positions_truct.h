@@ -17,18 +17,22 @@ public:
 		sdPlayer = 0;
 		memcpy(ucpcSquares, cucpcStartup, 256);
 	}
+
 	void ChangeSide(void)           // 交换走子方
 	{
 		sdPlayer = 1 - sdPlayer;
 	}
+
 	void AddPiece(int sq, int pc)   // 在棋盘上放一枚棋子
 	{
 		ucpcSquares[sq] = pc;
 	}
+
 	void DelPiece(int sq)           // 从棋盘上拿走一枚棋子
 	{
 		ucpcSquares[sq] = 0;
 	}
+
 	void MovePiece(int mv);         // 搬一步棋的棋子
 	void MakeMove(int mv)           // 走一步棋
 	{

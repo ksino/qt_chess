@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 
+//棋盘中每个格子显示的控件
 class Square : public QLabel
 {
 	Q_OBJECT
@@ -14,7 +15,7 @@ public:
 signals:
 	void clicked(int sq);
 protected:
-	// 声明鼠标左键点击事件
+	// QLabel并没有clicked信号，声明鼠标左键点击事件
 	virtual void mouseReleaseEvent(QMouseEvent * ev);
 private:
 	int sq;
