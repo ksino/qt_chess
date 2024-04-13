@@ -93,15 +93,14 @@ public:
 		click,
 		capture,
 		draw,
+		move,
 		win
 	};
 	Q_ENUM(Sound)
 };
 
-#include <QDebug>//注意，头文件一定要添加
+#include <QDebug>
 
-//#define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << __DATE__ << __TIME__<< "]"
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
-
 
 #endif // CONST_DATA_H

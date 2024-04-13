@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QFrame>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -13,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
 	delete ui;
+	delete m_board;
 }
 
 void MainWindow::init()

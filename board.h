@@ -16,13 +16,14 @@ public:
 	explicit Board(QWidget *parent = nullptr);
 	~Board();
 
-signals:
 private slots:
 	// 点击格子事件处理
 	void ClickSquare(int sq);
+
 public:
 	// 播放资源声音
 	inline void PlayResWav(Resource::Sound name);
+
 private:
 	// "DrawSquare"参数
 	const bool DRAW_SELECTED = true;
@@ -32,7 +33,7 @@ private:
 	PositionStruct pos; // 局面实例
 	QFrame *m_frameBoard;
 	Square* square[256];
-	//HBITMAP bmpBoard, bmpSelected, bmpPieces[24]; // 资源图片句柄
+
 private:
 	void init();
 	// 绘制图片

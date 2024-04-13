@@ -111,7 +111,7 @@ void Board::ClickSquare(int sq)
 		DrawSquare(sq, DRAW_SELECTED);
 		sqSelected = 0;
 		// 播放走子或吃子的声音
-		this->PlayResWav(pc == 0 ? Resource::draw : Resource::capture);
+		this->PlayResWav(pc == 0 ? Resource::move : Resource::capture);
 	}
 }
 
