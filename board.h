@@ -21,8 +21,11 @@ private slots:
 	// 点击格子事件处理
 	void ClickSquare(int sq);
 public:
+	// 播放资源声音
 	inline void PlayResWav(Resource::Sound name);
 private:
+	// "DrawSquare"参数
+	const bool DRAW_SELECTED = true;
 	int sqSelected;     // 选中的格子
 	int mvLast;         //上一步棋
 	bool bFlipped {false};      // 是否翻转棋盘
@@ -32,24 +35,17 @@ private:
 	//HBITMAP bmpBoard, bmpSelected, bmpPieces[24]; // 资源图片句柄
 private:
 	void init();
-	// 绘制透明图片
+	// 绘制图片
 	inline void DrawTransBmp(int sq, bool selected = false);
 
 	// 绘制棋盘
 	void DrawBoard();
-
-	// 播放资源声音
-
-	// "DrawSquare"参数
-	const bool DRAW_SELECTED = true;
 
 	// 绘制格子
 	void DrawSquare(int sq, bool bSelected = false);
 
 	// 初始化棋局
 	void Startup(void);
-	void createSquare(int x, int y);
-
 };
 
 #endif // BOARD_H
