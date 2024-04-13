@@ -1,11 +1,17 @@
 #include "board.h"
 #include <QSound>
 #include <QDebug>
-
+#include <QMetaEnum>
 
 Board::Board(QWidget *parent) : QWidget(parent)
 {
+	this->Startup();
 	this->init();
+}
+
+Board::~Board()
+{
+	delete m_frameBoard;
 }
 
 void Board::init()
@@ -14,43 +20,38 @@ void Board::init()
 	m_frameBoard = new QFrame(this);
 	m_frameBoard->setGeometry(QRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT));
 	m_frameBoard->setStyleSheet("border-image: url(:/images/board.jpg)");
-
 	for(int sq = 0; sq < 256; sq++)
 	{
+		//初始化棋盘中的格子
 		if(ccInBoard[sq])
 		{
-			int y = BOARD_EDGE + (pos.RANK_Y(sq) - FILE_LEFT) * SQUARE_SIZE;
+			//计算格子坐标
 			int x = BOARD_EDGE + (pos.FILE_X(sq) - RANK_TOP) * SQUARE_SIZE;
-
-//			square[sq] = new QFrame(m_frameBoard);
-//			square[sq]->setGeometry(x, y, SQUARE_SIZE, SQUARE_SIZE);
-//            square[sq]->setStyleSheet("border-image: url(:/images/oos.gif)");
-
-			squareLabel[sq] = new QLabel(m_frameBoard);
-			squareLabel[sq]->setGeometry(x, y, SQUARE_SIZE, SQUARE_SIZE);
-			squareLabel[sq]->setStyleSheet("border-image: url(:/images/oos.gif)");
-			squareLabel[sq]->setPixmap(QPixmap(QString::fromUtf8(":/images/ra.gif")));
-//			connect(square[sq], &QFrame::clicked, this, &Board::onClicked);
-			qDebug() << sq << x << y;
+			int y = BOARD_EDGE + (pos.RANK_Y(sq) - FILE_LEFT) * SQUARE_SIZE;
+			square[sq] = new Square(m_frameBoard, sq);
+			square[sq]->setGeometry(x, y, SQUARE_SIZE, SQUARE_SIZE);
+			DrawTransBmp(sq);
+			//绑定点击事件
+			connect(square[sq], &Square::clicked, this, &Board::ClickSquare);
+			//qDebug() << sq << x << y;
 		}
 		else
 		{
+			//非棋盘中的格子初始化为空指针
 			square[sq] = nullptr;
 		}
 	}
 	//this->DrawBoard();
 }
 
-void Board::onClicked()
-{
-	qDebug() << "clicked";
-}
-
 // 绘制透明图片
-inline void Board::DrawTransBmp(int xx, int yy, QString bmp)
+inline void Board::DrawTransBmp(int sq, bool selected)
 {
-//		SelectObject(hdcTmp, bmp);
-//		TransparentBlt2(hdc, xx, yy, SQUARE_SIZE, SQUARE_SIZE, hdcTmp, 0, 0, SQUARE_SIZE, SQUARE_SIZE, MASK_COLOR);
+	L << "DrawTransBmp";
+	QString s = selected ? "oos" : "oo";
+	square[sq]->setStyleSheet(QString("border-image: url(:/images/%1.gif)").arg(s));
+	int pc = pos.ucpcSquares[sq];
+	square[sq]->setPixmap(QPixmap(QString(":/images/%1.gif").arg(QString::fromStdString(PIECE_NAME[pc]))));
 }
 
 void Board::createSquare(int x, int y)
@@ -81,11 +82,11 @@ void Board::DrawBoard()
 			pc = pos.ucpcSquares[sq];
 			if (pc != 0)
 			{
-				DrawTransBmp(xx, yy, "bmpPieces[pc]");
+				DrawTransBmp(sq);
 			}
 			if (sq == sqSelected || sq == pos.SRC(mvLast) || sq == pos.DST(mvLast))
 			{
-				DrawTransBmp(xx, yy, "bmpSelected");
+				DrawTransBmp(sq, true);
 			}
 		}
 	}
@@ -93,9 +94,12 @@ void Board::DrawBoard()
 
 
 // 播放资源声音
-inline void Board::PlayResWav(QString name)
+inline void Board::PlayResWav(Resource::Sound name)
 {
-	QSound::play(QString(":/sounds/%1.wav").arg(name));
+	QMetaEnum m = QMetaEnum::fromType<Resource::Sound>();
+	QString playName = QString(m.valueToKey(name));
+	QSound::play(QString(":/sounds/%1.wav").arg(playName));
+	qDebug() << "PlayResWav" << playName;
 }
 
 // "DrawSquare"参数
@@ -111,24 +115,18 @@ void Board::DrawSquare(int sq, bool bSelected)
 	yy = BOARD_EDGE + (pos.RANK_Y(sqFlipped) - RANK_TOP) * SQUARE_SIZE;
 	//BitBlt(Xqwl.hdc, xx, yy, SQUARE_SIZE, SQUARE_SIZE, Xqwl.hdcTmp, xx, yy, SRCCOPY);
 	pc = pos.ucpcSquares[sq];
-	if (pc != 0)
-	{
-		DrawTransBmp(xx, yy, "bmpPieces[pc]");
-	}
-	if (bSelected)
-	{
-		DrawTransBmp(xx, yy, "bmpSelected");
-	}
+	DrawTransBmp(sq, bSelected);
 }
 
 // 点击格子事件处理
 void Board::ClickSquare(int sq)
 {
+	L << "sq" << sq << bFlipped;
+	square[sq]->setStyleSheet("border-image: url(:/images/oos.gif)");
 	int pc;
-//		Xqwl.hdc = GetDC(Xqwl.hWnd);
-//		Xqwl.hdcTmp = CreateCompatibleDC(Xqwl.hdc);
 	sq = bFlipped ? pos.SQUARE_FLIP(sq) : sq;
 	pc = pos.ucpcSquares[sq];
+	L << "sq" << sq << "pc" << pc;
 
 	if ((pc & pos.SIDE_TAG(pos.sdPlayer)) != 0)
 	{
@@ -144,8 +142,8 @@ void Board::ClickSquare(int sq)
 			DrawSquare(pos.SRC(mvLast));
 			DrawSquare(pos.DST(mvLast));
 		}
-		//PlayResWav(IDR_CLICK); // 播放点击的声音
-
+		// 播放点击的声音
+		this->PlayResWav(Resource::click);
 	}
 	else if (sqSelected != 0)
 	{
@@ -155,6 +153,7 @@ void Board::ClickSquare(int sq)
 		DrawSquare(sqSelected, DRAW_SELECTED);
 		DrawSquare(sq, DRAW_SELECTED);
 		sqSelected = 0;
+		this->PlayResWav(pc == 0 ? Resource::draw : Resource::capture);
 		//PlayResWav(pc == 0 ? IDR_MOVE : IDR_CAPTURE); // 播放走子或吃子的声音
 	}
 }
@@ -163,7 +162,8 @@ void Board::ClickSquare(int sq)
 void Board::Startup(void)
 {
 	pos.Startup();
-	sqSelected = mvLast = 0;
+	sqSelected = 0;
+	mvLast = 0;
 }
 
 

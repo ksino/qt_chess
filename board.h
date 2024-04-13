@@ -7,31 +7,33 @@
 #include <QLabel>
 #include <const_data.h>
 #include <positions_truct.h>
+#include "square.h"
 
 class Board : public QWidget
 {
 	Q_OBJECT
 public:
 	explicit Board(QWidget *parent = nullptr);
+	~Board();
 
 signals:
 private slots:
-	void onClicked();
+	// 点击格子事件处理
+	void ClickSquare(int sq);
 public:
-	inline void PlayResWav(QString name);
+	inline void PlayResWav(Resource::Sound name);
 private:
 	int sqSelected;     // 选中的格子
 	int mvLast;         //上一步棋
-	bool bFlipped;      // 是否翻转棋盘
+	bool bFlipped {false};      // 是否翻转棋盘
 	PositionStruct pos; // 局面实例
 	QFrame *m_frameBoard;
-	QFrame* square[256];
-	QLabel* squareLabel[256];
+	Square* square[256];
 	//HBITMAP bmpBoard, bmpSelected, bmpPieces[24]; // 资源图片句柄
 private:
 	void init();
 	// 绘制透明图片
-	inline void DrawTransBmp(int xx, int yy, QString bmp);
+	inline void DrawTransBmp(int sq, bool selected = false);
 
 	// 绘制棋盘
 	void DrawBoard();
@@ -43,9 +45,6 @@ private:
 
 	// 绘制格子
 	void DrawSquare(int sq, bool bSelected = false);
-
-	// 点击格子事件处理
-	void ClickSquare(int sq);
 
 	// 初始化棋局
 	void Startup(void);

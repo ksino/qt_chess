@@ -20,12 +20,14 @@ SOURCES += \
     mainwindow.cpp \
     positions_truct.cpp \
     board.cpp \
+    square.cpp
 
 HEADERS += \
     const_data.h \
     mainwindow.h \
     positions_truct.h \
     board.h \
+    square.h
 
 FORMS += \
     mainwindow.ui

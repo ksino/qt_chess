@@ -80,4 +80,28 @@ static const char ccInBoard[256] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
+#include <QObject>
+
+class Resource: public QObject
+{
+	Q_OBJECT
+public:
+	explicit Resource(QObject *parent = nullptr);
+
+	enum Sound
+	{
+		click,
+		capture,
+		draw,
+		win
+	};
+	Q_ENUM(Sound)
+};
+
+#include <QDebug>//注意，头文件一定要添加
+
+//#define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << __DATE__ << __TIME__<< "]"
+#define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
+
+
 #endif // CONST_DATA_H
