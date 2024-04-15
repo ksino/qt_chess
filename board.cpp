@@ -19,14 +19,12 @@ void Board::init()
 	this->DrawBoard();
 }
 
-// 绘制图片
-inline void Board::DrawTransBmp(int sq, bool selected)
+// 初始化棋局
+void Board::Startup(void)
 {
-	L << "DrawTransBmp";
-	QString s = selected ? "oos" : "oo";
-	square[sq]->setStyleSheet(QString("border-image: url(:/images/%1.gif)").arg(s));
-	int pc = pos.ucpcSquares[sq];
-	square[sq]->setPixmap(QPixmap(QString(":/images/%1.gif").arg(QString::fromStdString(PIECE_NAME[pc]))));
+	pos.Startup();
+	sqSelected = 0;
+	mvLast = 0;
 }
 
 // 绘制棋盘
@@ -36,17 +34,22 @@ void Board::DrawBoard()
 	m_frameBoard = new QFrame(this);
 	m_frameBoard->setGeometry(QRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT));
 	m_frameBoard->setStyleSheet("border-image: url(:/images/board.jpg)");
+
+	//格子数组的长度为256的一维数组，可以看作是16 * 16的二维数组
+	//实际棋盘占用的格子是9 * 10
+	//其它多出的格子是辅助判断，一些棋子如马象的走法，需判断是否走出边界
+	//TODO 如果开局是一些残局的时候，应该是刷新棋盘，不需再重新实例化
 	for(int sq = 0; sq < 256; sq++)
 	{
 		//初始化棋盘中的格子
 		if(ccInBoard[sq])
 		{
 			//计算格子坐标
-			int x = BOARD_EDGE + (pos.FILE_X(sq) - RANK_TOP) * SQUARE_SIZE;
-			int y = BOARD_EDGE + (pos.RANK_Y(sq) - FILE_LEFT) * SQUARE_SIZE;
+			int x = SQ_X(sq);
+			int y = SQ_Y(sq);
 			square[sq] = new Square(m_frameBoard, sq);
 			square[sq]->setGeometry(x, y, SQUARE_SIZE, SQUARE_SIZE);
-			DrawTransBmp(sq);
+			DrawSquare(sq);
 			//绑定点击事件
 			connect(square[sq], &Square::clicked, this, &Board::ClickSquare);
 			//qDebug() << sq << x << y;
@@ -59,45 +62,71 @@ void Board::DrawBoard()
 	}
 }
 
-// 播放资源声音
-inline void Board::PlayResWav(Resource::Sound name)
+//根据sq计算控件的X坐标
+int Board::SQ_X(int sq)
 {
-	QMetaEnum m = QMetaEnum::fromType<Resource::Sound>();
-	QString playName = QString(m.valueToKey(name));
-	QSound::play(QString(":/sounds/%1.wav").arg(playName));
-	qDebug() << "PlayResWav" << playName;
+	return BOARD_EDGE + (pos.FILE_X(sq) - FILE_LEFT) * SQUARE_SIZE;
+}
+
+//根据sq计算控件的Y坐标
+int Board::SQ_Y(int sq)
+{
+	return BOARD_EDGE + (pos.RANK_Y(sq) - RANK_TOP) * SQUARE_SIZE;
 }
 
 // 绘制格子
 void Board::DrawSquare(int sq, bool bSelected)
 {
-	//int xx = BOARD_EDGE + (pos.FILE_X(sqFlipped) - FILE_LEFT) * SQUARE_SIZE;
-	//int yy = BOARD_EDGE + (pos.RANK_Y(sqFlipped) - RANK_TOP) * SQUARE_SIZE;
 	int sqFlipped = bFlipped ? pos.SQUARE_FLIP(sq) : sq;
 	DrawTransBmp(sqFlipped, bSelected);
+}
+
+// 绘制图片
+inline void Board::DrawTransBmp(int sq, bool selected)
+{
+	L << "DrawTransBmp";
+	//绘制背景图片，选中或者透明
+	QString s = selected ? "oos" : "oo";
+	square[sq]->setStyleSheet(QString("border-image: url(:/images/%1.gif)").arg(s));
+	//根据格子上的棋子值绘制对应前景图片
+	int pc = pos.GetSquare(sq);
+	square[sq]->setPixmap(QPixmap(QString(":/images/%1.gif").arg(PIECE_NAME[pc])));
+}
+
+// 播放资源声音
+inline void Board::PlayResWav(Resource::Sound name)
+{
+	QMetaEnum m = QMetaEnum::fromType<Resource::Sound>();
+	//将Enum转化成字符串
+	QString playName = QString(m.valueToKey(name));
+	QSound::play(QString(":/sounds/%1.wav").arg(playName));
+	L << "PlayResWav" << playName;
 }
 
 // 点击格子事件处理
 void Board::ClickSquare(int sq)
 {
-	int pc;
+	//sq 点击棋子在数组中的索引
+	//pc 点击棋子在数组中的值
 	sq = bFlipped ? pos.SQUARE_FLIP(sq) : sq;
-	pc = pos.ucpcSquares[sq];
-	L << "sq" << sq << "pc" << pc;
+	int pc = pos.GetSquare(sq);
+	L << "sq=" << sq << "pc=" << pc << "sqSelected=" << sqSelected;
 
 	if ((pc & pos.SIDE_TAG(pos.sdPlayer)) != 0)
 	{
 		// 如果点击自己的子，那么直接选中该子
 		if (sqSelected != 0)
 		{
-			DrawSquare(sqSelected);
+			//如果之前点击过自己的子，清除图片的选中状态
+			DrawSquare(sqSelected, false);
 		}
 		sqSelected = sq;
 		DrawSquare(sq, DRAW_SELECTED);
 		if (mvLast != 0)
 		{
-			DrawSquare(pos.SRC(mvLast));
-			DrawSquare(pos.DST(mvLast));
+			//如果对方走了一步，清除起始和终点图片的选中状态
+			DrawSquare(pos.SRC(mvLast), false);
+			DrawSquare(pos.DST(mvLast), false);
 		}
 		// 播放点击的声音
 		this->PlayResWav(Resource::click);
@@ -105,6 +134,7 @@ void Board::ClickSquare(int sq)
 	else if (sqSelected != 0)
 	{
 		// 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
+		//生成走法
 		mvLast = pos.MOVE(sqSelected, sq);
 		pos.MakeMove(mvLast);
 		DrawSquare(sqSelected, DRAW_SELECTED);
@@ -114,13 +144,4 @@ void Board::ClickSquare(int sq)
 		this->PlayResWav(pc == 0 ? Resource::move : Resource::capture);
 	}
 }
-
-// 初始化棋局
-void Board::Startup(void)
-{
-	pos.Startup();
-	sqSelected = 0;
-	mvLast = 0;
-}
-
 

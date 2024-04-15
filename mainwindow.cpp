@@ -17,6 +17,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
+	//新建棋盘实例
 	m_board = new Board(ui->centralwidget);
+	//设定棋盘大小和坐标
 	m_board->setGeometry(QRect(57, 57, BOARD_WIDTH, BOARD_HEIGHT));
 }

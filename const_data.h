@@ -2,15 +2,16 @@
 #define CONST_DATA_H
 
 #include <iostream>
+#include <QObject>
+#include <QDebug>
+
 using namespace std;
 
 // 版本号
-const std::string cszAbout = "象棋小巫师 0.1\n象棋百科全书 荣誉出品\n\n"
-                             "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
+const QString cszAbout = "象棋小巫师 0.1\n象棋百科全书 荣誉出品\n\n"
+                         "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
-//const int WINDOW_STYLES = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX;
-//const int MASK_COLOR = RGB(0, 255, 0);
 const int SQUARE_SIZE = 56;
 const int BOARD_EDGE = 8;
 const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
@@ -31,7 +32,7 @@ const int PIECE_ROOK = 4;
 const int PIECE_CANNON = 5;
 const int PIECE_PAWN = 6;
 
-const std::string PIECE_NAME[] =
+const QString PIECE_NAME[] =
 {
 	"oo", "", "", "", "", "", "", "",
 	"rk", "ra", "rb", "rn", "rr", "rc", "rp", "",
@@ -80,8 +81,6 @@ static const char ccInBoard[256] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-#include <QObject>
-
 class Resource: public QObject
 {
 	Q_OBJECT
@@ -98,8 +97,6 @@ public:
 	};
 	Q_ENUM(Sound)
 };
-
-#include <QDebug>
 
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
 

@@ -18,6 +18,11 @@ public:
 		memcpy(ucpcSquares, cucpcStartup, 256);
 	}
 
+	uint8_t GetSquare(int sq)              // 取得格子上的棋子值
+	{
+		return ucpcSquares[sq];
+	}
+
 	void ChangeSide(void)           // 交换走子方
 	{
 		sdPlayer = 1 - sdPlayer;
@@ -40,14 +45,14 @@ public:
 		ChangeSide();
 	}
 
-	// 获得格子的横坐标
+	// 获得格子的横坐标（行数）
 	inline int RANK_Y(int sq)
 	{
 		//sq / 16
 		return sq >> 4;
 	}
 
-	// 获得格子的纵坐标
+	// 获得格子的纵坐标（列数）
 	inline int FILE_X(int sq)
 	{
 		// sq % 16
@@ -106,6 +111,7 @@ public:
 	// 根据起点和终点获得走法
 	inline int MOVE(int sqSrc, int sqDst)
 	{
+		//相当于两个字节拼接即 (sqDst << 8) | sqSrc
 		return sqSrc + sqDst * 256;
 	}
 };

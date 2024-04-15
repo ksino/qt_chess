@@ -27,15 +27,21 @@ public:
 private:
 	// "DrawSquare"参数
 	const bool DRAW_SELECTED = true;
-	int sqSelected;     // 选中的格子
-	int mvLast;         //上一步棋
-	bool bFlipped {false};      // 是否翻转棋盘
+	// 选中的格子
+	int sqSelected;
+	//上一步棋
+	int mvLast;
+	// 是否翻转棋盘
+	bool bFlipped {false};
 	PositionStruct pos; // 局面实例
+	//棋盘显示控件
 	QFrame *m_frameBoard;
+	//棋盘格子数组
 	Square* square[256];
 
 private:
 	void init();
+
 	// 绘制图片
 	inline void DrawTransBmp(int sq, bool selected = false);
 
@@ -47,6 +53,9 @@ private:
 
 	// 初始化棋局
 	void Startup(void);
+
+	int SQ_X(int sq);
+	int SQ_Y(int sq);
 };
 
 #endif // BOARD_H
