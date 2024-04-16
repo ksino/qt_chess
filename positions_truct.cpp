@@ -39,7 +39,9 @@ void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 bool PositionStruct::MakeMove(int mv)
 {
 	int pc;
+	//返回终点棋子值
 	pc = MovePiece(mv);
+	//如果正在被将军，撤销这一步棋
 	if (Checked())
 	{
 		UndoMovePiece(mv, pc);
@@ -253,6 +255,7 @@ bool PositionStruct::LegalMove(int mv) const
 	pcSelfSide = SIDE_TAG(sdPlayer);
 	if ((pcSrc & pcSelfSide) == 0)
 	{
+		//起始格不是自己的棋子
 		return false;
 	}
 
@@ -261,24 +264,26 @@ bool PositionStruct::LegalMove(int mv) const
 	pcDst = ucpcSquares[sqDst];
 	if ((pcDst & pcSelfSide) != 0)
 	{
+		//目标格不是空白或对方棋子
 		return false;
 	}
 
 	// 3. 根据棋子的类型检查走法是否合理
+	//pcSrc - pcSelfSide得到棋子值
 	switch (pcSrc - pcSelfSide)
 	{
-	case PIECE_KING:
+	case PIECE_KING:    //帅(将)
 		return IN_FORT(sqDst) && KING_SPAN(sqSrc, sqDst);
-	case PIECE_ADVISOR:
+	case PIECE_ADVISOR: //仕(士)
 		return IN_FORT(sqDst) && ADVISOR_SPAN(sqSrc, sqDst);
-	case PIECE_BISHOP:
+	case PIECE_BISHOP:  //相(象)
 		return SAME_HALF(sqSrc, sqDst) && BISHOP_SPAN(sqSrc, sqDst) &&
 		       ucpcSquares[BISHOP_PIN(sqSrc, sqDst)] == 0;
-	case PIECE_KNIGHT:
+	case PIECE_KNIGHT:  //马
 		sqPin = KNIGHT_PIN(sqSrc, sqDst);
 		return sqPin != sqSrc && ucpcSquares[sqPin] == 0;
-	case PIECE_ROOK:
-	case PIECE_CANNON:
+	case PIECE_ROOK:   //车
+	case PIECE_CANNON: //炮
 		if (SAME_RANK(sqSrc, sqDst))
 		{
 			nDelta = (sqDst < sqSrc ? -1 : 1);
@@ -292,17 +297,23 @@ bool PositionStruct::LegalMove(int mv) const
 			return false;
 		}
 		sqPin = sqSrc + nDelta;
+		//找到起点到终点间的阻隔棋子的位置
 		while (sqPin != sqDst && ucpcSquares[sqPin] == 0)
 		{
 			sqPin += nDelta;
 		}
+		//起点上的第一个阻隔的子是终点
 		if (sqPin == sqDst)
 		{
+			//终点没有棋子
+			//或者起点棋子是车
 			return pcDst == 0 || pcSrc - pcSelfSide == PIECE_ROOK;
 		}
+		//阻隔棋子在中间，终点有棋子且起点棋子是炮
 		else if (pcDst != 0 && pcSrc - pcSelfSide == PIECE_CANNON)
 		{
 			sqPin += nDelta;
+			//查找第一个阻隔棋子和终点还有没有其它棋子
 			while (sqPin != sqDst && ucpcSquares[sqPin] == 0)
 			{
 				sqPin += nDelta;
@@ -313,7 +324,7 @@ bool PositionStruct::LegalMove(int mv) const
 		{
 			return false;
 		}
-	case PIECE_PAWN:
+	case PIECE_PAWN: //兵
 		if (AWAY_HALF(sqDst, sdPlayer) && (sqDst == sqSrc - 1 || sqDst == sqSrc + 1))
 		{
 			return true;

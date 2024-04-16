@@ -122,14 +122,14 @@ void Board::ClickSquare(int sq)
 		// 如果点击自己的子，那么直接选中该子
 		if (sqSelected != 0)
 		{
-			//如果之前点击过自己的子，清除图片的选中状态
+			//如果之前点击的格子是自己的子，清除选中状态
 			DrawSquare(sqSelected, false);
 		}
 		sqSelected = sq;
 		DrawSquare(sq, DRAW_SELECTED);
 		if (mvLast != 0)
 		{
-			//如果对方走了一步，清除起始和终点图片的选中状态
+			//如果对方走了一步，清除起始和终点格子的选中状态
 			DrawSquare(SRC(mvLast), false);
 			DrawSquare(DST(mvLast), false);
 		}
@@ -141,6 +141,7 @@ void Board::ClickSquare(int sq)
 		// 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
 		//生成走法
 		mv = MOVE(sqSelected, sq);
+		//走法是否合法
 		if(pos.LegalMove(mv))
 		{
 			if(pos.MakeMove(mv))
