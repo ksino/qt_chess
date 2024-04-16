@@ -59,6 +59,7 @@ private:
 
 	int SQ_X(int sq);
 	int SQ_Y(int sq);
+	void MessageBoxMute(QString msg);
 };
 }
 #endif // BOARD_H

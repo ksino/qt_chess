@@ -2,6 +2,7 @@
 #include <QSound>
 #include <QDebug>
 #include <QMetaEnum>
+#include <QMessageBox>
 
 namespace Chess
 {
@@ -68,19 +69,19 @@ void Board::DrawBoard()
 //根据sq计算控件的X坐标
 int Board::SQ_X(int sq)
 {
-	return BOARD_EDGE + (pos.FILE_X(sq) - FILE_LEFT) * SQUARE_SIZE;
+	return BOARD_EDGE + (FILE_X(sq) - FILE_LEFT) * SQUARE_SIZE;
 }
 
 //根据sq计算控件的Y坐标
 int Board::SQ_Y(int sq)
 {
-	return BOARD_EDGE + (pos.RANK_Y(sq) - RANK_TOP) * SQUARE_SIZE;
+	return BOARD_EDGE + (RANK_Y(sq) - RANK_TOP) * SQUARE_SIZE;
 }
 
 // 绘制格子
 void Board::DrawSquare(int sq, bool bSelected)
 {
-	int sqFlipped = bFlipped ? pos.SQUARE_FLIP(sq) : sq;
+	int sqFlipped = bFlipped ? SQUARE_FLIP(sq) : sq;
 	DrawTransBmp(sqFlipped, bSelected);
 }
 
@@ -111,11 +112,12 @@ void Board::ClickSquare(int sq)
 {
 	//sq 点击棋子在数组中的索引
 	//pc 点击棋子在数组中的值
-	sq = bFlipped ? pos.SQUARE_FLIP(sq) : sq;
+	int mv;
+	sq = bFlipped ? SQUARE_FLIP(sq) : sq;
 	int pc = pos.GetSquare(sq);
 	L << "sq=" << sq << "pc=" << pc << "sqSelected=" << sqSelected;
 
-	if ((pc & pos.SIDE_TAG(pos.sdPlayer)) != 0)
+	if ((pc & SIDE_TAG(pos.sdPlayer)) != 0)
 	{
 		// 如果点击自己的子，那么直接选中该子
 		if (sqSelected != 0)
@@ -128,8 +130,8 @@ void Board::ClickSquare(int sq)
 		if (mvLast != 0)
 		{
 			//如果对方走了一步，清除起始和终点图片的选中状态
-			DrawSquare(pos.SRC(mvLast), false);
-			DrawSquare(pos.DST(mvLast), false);
+			DrawSquare(SRC(mvLast), false);
+			DrawSquare(DST(mvLast), false);
 		}
 		// 播放点击的声音
 		this->PlayResWav(Resource::click);
@@ -138,13 +140,39 @@ void Board::ClickSquare(int sq)
 	{
 		// 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
 		//生成走法
-		mvLast = pos.MOVE(sqSelected, sq);
-		pos.MakeMove(mvLast);
-		DrawSquare(sqSelected, DRAW_SELECTED);
-		DrawSquare(sq, DRAW_SELECTED);
-		sqSelected = 0;
-		// 播放走子或吃子的声音
-		this->PlayResWav(pc == 0 ? Resource::move : Resource::capture);
+		mv = MOVE(sqSelected, sq);
+		if(pos.LegalMove(mv))
+		{
+			if(pos.MakeMove(mv))
+			{
+				mvLast = mv;
+				DrawSquare(sqSelected, DRAW_SELECTED);
+				DrawSquare(sq, DRAW_SELECTED);
+				sqSelected = 0;
+				if (pos.IsMate())
+				{
+					// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
+					PlayResWav(Resource::win);
+					MessageBoxMute("祝贺你取得胜利！");
+				}
+				else
+				{
+					// 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+					this->PlayResWav(pos.Checked() ? Resource::check : pc != 0 ? Resource::capture : Resource::move);
+				}
+			}
+			else
+			{
+				PlayResWav(Resource::illegal); // 播放被将军的声音
+			}
+		}
+		// 如果根本就不符合走法(例如马不走日字)，那么程序不予理会
 	}
 }
+
+void Board::MessageBoxMute(QString msg)
+{
+	QMessageBox::information(this, "象棋小巫师", msg, QMessageBox::Ok);
+}
+
 }
