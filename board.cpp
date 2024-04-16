@@ -3,6 +3,9 @@
 #include <QDebug>
 #include <QMetaEnum>
 
+namespace Chess
+{
+
 Board::Board(QWidget *parent) : QWidget(parent)
 {
 	this->init();
@@ -84,13 +87,13 @@ void Board::DrawSquare(int sq, bool bSelected)
 // 绘制图片
 inline void Board::DrawTransBmp(int sq, bool selected)
 {
-	L << "DrawTransBmp";
 	//绘制背景图片，选中或者透明
 	QString s = selected ? "oos" : "oo";
 	square[sq]->setStyleSheet(QString("border-image: url(:/images/%1.gif)").arg(s));
 	//根据格子上的棋子值绘制对应前景图片
 	int pc = pos.GetSquare(sq);
 	square[sq]->setPixmap(QPixmap(QString(":/images/%1.gif").arg(PIECE_NAME[pc])));
+	L << "DrawTransBmp" << PIECE_NAME[pc];
 }
 
 // 播放资源声音
@@ -144,4 +147,4 @@ void Board::ClickSquare(int sq)
 		this->PlayResWav(pc == 0 ? Resource::move : Resource::capture);
 	}
 }
-
+}

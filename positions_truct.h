@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <const_data.h>
 
+namespace Chess
+{
+
 // 局面结构
 class PositionStruct
 {
@@ -115,5 +118,5 @@ public:
 		return sqSrc + sqDst * 256;
 	}
 };
-
+}
 #endif // POSITIONSTRUCT_H

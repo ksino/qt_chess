@@ -9,6 +9,9 @@
 #include <positions_truct.h>
 #include "square.h"
 
+namespace Chess
+{
+
 class Board : public QWidget
 {
 	Q_OBJECT
@@ -57,5 +60,5 @@ private:
 	int SQ_X(int sq);
 	int SQ_Y(int sq);
 };
-
+}
 #endif // BOARD_H

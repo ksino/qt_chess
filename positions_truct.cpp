@@ -1,5 +1,8 @@
 #include "positions_truct.h"
 
+namespace Chess
+{
+
 PositionStruct::PositionStruct()
 {
 
@@ -15,4 +18,5 @@ void PositionStruct::MovePiece(int mv)
 	pc = ucpcSquares[sqSrc];
 	DelPiece(sqSrc);
 	AddPiece(sqDst, pc);
+}
 }

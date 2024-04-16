@@ -12,7 +12,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-
+using namespace Chess;
 
 class MainWindow : public QMainWindow
 {
