@@ -144,6 +144,8 @@ void Board::ClickSquare(int sq)
 		//走法是否合法
 		if(pos.LegalMove(mv))
 		{
+			//MakeMove有一个很巧妙的地方，即切换了走子方（sdPlayer）
+			//即以下的IsMate() Checked()都是判断对方
 			if(pos.MakeMove(mv))
 			{
 				mvLast = mv;

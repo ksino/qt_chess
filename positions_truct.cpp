@@ -41,6 +41,7 @@ bool PositionStruct::MakeMove(int mv)
 	int pc;
 	//返回终点棋子值
 	pc = MovePiece(mv);
+	//移动棋子后的新局面，可能会产生被将军的情况
 	//如果正在被将军，撤销这一步棋
 	if (Checked())
 	{
@@ -74,15 +75,17 @@ int PositionStruct::GenerateMoves(int *mvs) const
 		// 2. 根据棋子确定走法
 		switch (pcSrc - pcSelfSide)
 		{
-		case PIECE_KING:
+		case PIECE_KING: //将
 			for (i = 0; i < 4; i ++)
 			{
 				sqDst = sqSrc + ccKingDelta[i];
+				//目标位置不在九宫格内 跳过
 				if (!IN_FORT(sqDst))
 				{
 					continue;
 				}
 				pcDst = ucpcSquares[sqDst];
+				//目标位置为空或对方棋子，即是合法走法
 				if ((pcDst & pcSelfSide) == 0)
 				{
 					mvs[nGenMoves] = MOVE(sqSrc, sqDst);
@@ -90,7 +93,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_ADVISOR:
+		case PIECE_ADVISOR: //士
 			for (i = 0; i < 4; i ++)
 			{
 				sqDst = sqSrc + ccAdvisorDelta[i];
@@ -106,7 +109,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_BISHOP:
+		case PIECE_BISHOP: //象
 			for (i = 0; i < 4; i ++)
 			{
 				sqDst = sqSrc + ccAdvisorDelta[i];
@@ -123,7 +126,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_KNIGHT:
+		case PIECE_KNIGHT: //马
 			for (i = 0; i < 4; i ++)
 			{
 				sqDst = sqSrc + ccKingDelta[i];
@@ -147,7 +150,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_ROOK:
+		case PIECE_ROOK: //车
 			for (i = 0; i < 4; i ++)
 			{
 				nDelta = ccKingDelta[i];
@@ -173,7 +176,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_CANNON:
+		case PIECE_CANNON: //炮
 			for (i = 0; i < 4; i ++)
 			{
 				nDelta = ccKingDelta[i];
@@ -209,7 +212,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 			}
 			break;
-		case PIECE_PAWN:
+		case PIECE_PAWN: //卒
 			sqDst = SQUARE_FORWARD(sqSrc, sdPlayer);
 			if (IN_BOARD(sqDst))
 			{
@@ -352,10 +355,12 @@ bool PositionStruct::Checked() const
 		}
 
 		// 1. 判断是否被对方的兵(卒)将军
+		//将（帅）的前一列是兵（卒）
 		if (ucpcSquares[SQUARE_FORWARD(sqSrc, sdPlayer)] == pcOppSide + PIECE_PAWN)
 		{
 			return true;
 		}
+		//将（帅）的左右是兵（卒）
 		for (nDelta = -1; nDelta <= 1; nDelta += 2)
 		{
 			if (ucpcSquares[sqSrc + nDelta] == pcOppSide + PIECE_PAWN)
@@ -367,12 +372,15 @@ bool PositionStruct::Checked() const
 		// 2. 判断是否被对方的马将军(以仕(士)的步长当作马腿)
 		for (i = 0; i < 4; i ++)
 		{
+			//马腿位置有棋子则跳过
 			if (ucpcSquares[sqSrc + ccAdvisorDelta[i]] != 0)
 			{
 				continue;
 			}
+			//一个马腿的位置对应有两只马的位置
 			for (j = 0; j < 2; j ++)
 			{
+				//如果将（帅）被马将军，对应马的位置
 				pcDst = ucpcSquares[sqSrc + ccKnightCheckDelta[i][j]];
 				if (pcDst == pcOppSide + PIECE_KNIGHT)
 				{
@@ -384,6 +392,7 @@ bool PositionStruct::Checked() const
 		// 3. 判断是否被对方的车或炮将军(包括将帅对脸)
 		for (i = 0; i < 4; i ++)
 		{
+			//在棋盘内，往将（帅）的上下左右四条直线位置查找棋子
 			nDelta = ccKingDelta[i];
 			sqDst = sqSrc + nDelta;
 			while (IN_BOARD(sqDst))
@@ -391,10 +400,12 @@ bool PositionStruct::Checked() const
 				pcDst = ucpcSquares[sqDst];
 				if (pcDst != 0)
 				{
+					//查到的第一个子是对方的将或车时
 					if (pcDst == pcOppSide + PIECE_ROOK || pcDst == pcOppSide + PIECE_KING)
 					{
 						return true;
 					}
+					//跳出循环，得到第一个子
 					break;
 				}
 				sqDst += nDelta;
@@ -405,6 +416,7 @@ bool PositionStruct::Checked() const
 				int pcDst = ucpcSquares[sqDst];
 				if (pcDst != 0)
 				{
+					//查到的第二个子是对方的炮
 					if (pcDst == pcOppSide + PIECE_CANNON)
 					{
 						return true;
@@ -419,16 +431,17 @@ bool PositionStruct::Checked() const
 	return false;
 }
 
-// 判断是否被杀
+// 判断sdPlayer方是否被杀
 bool PositionStruct::IsMate(void)
 {
 	int i, nGenMoveNum, pcCaptured;
 	int mvs[MAX_GEN_MOVES];
-
+	//生成sdPlayer方所有棋子的走法
 	nGenMoveNum = GenerateMoves(mvs);
 	for (i = 0; i < nGenMoveNum; i ++)
 	{
 		pcCaptured = MovePiece(mvs[i]);
+		//假设sdPlayer方走了一步棋后，没有出现将军，即没被杀死
 		if (!Checked())
 		{
 			UndoMovePiece(mvs[i], pcCaptured);
@@ -439,6 +452,7 @@ bool PositionStruct::IsMate(void)
 			UndoMovePiece(mvs[i], pcCaptured);
 		}
 	}
+	//如果所有走法走完，没有返回false，即已被杀死
 	return true;
 }
 
