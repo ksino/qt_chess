@@ -5,9 +5,12 @@
 #include <QWidget>
 #include <QObject>
 #include <QLabel>
-#include <const_data.h>
-#include <positions_truct.h>
+
+#include "const_data.h"
+#include "positions_truct.h"
 #include "square.h"
+#include "search.h"
+
 
 namespace Chess
 {
@@ -41,6 +44,7 @@ private:
 	QFrame *m_frameBoard;
 	//棋盘格子数组
 	Square* square[256];
+	Search *search {nullptr};
 
 private:
 	void init();
@@ -59,6 +63,7 @@ private:
 
 	int SQ_X(int sq);
 	int SQ_Y(int sq);
+	void ResponseMove(void);
 	void MessageBoxMute(QString msg);
 };
 }

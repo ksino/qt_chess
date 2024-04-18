@@ -11,6 +11,7 @@ SOURCES += \
     mainwindow.cpp \
     positions_truct.cpp \
     board.cpp \
+    search.cpp \
     square.cpp
 
 HEADERS += \
@@ -18,6 +19,7 @@ HEADERS += \
     mainwindow.h \
     positions_truct.h \
     board.h \
+    search.h \
     square.h
 
 FORMS += \

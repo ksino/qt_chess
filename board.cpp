@@ -21,6 +21,13 @@ void Board::init()
 {
 	this->Startup();
 	this->DrawBoard();
+//	if (Xqwl.bFlipped)
+//	{
+//		Xqwl.hdc = hdc;
+//		Xqwl.hdcTmp = CreateCompatibleDC(Xqwl.hdc);
+//		ResponseMove();
+//		DeleteDC(Xqwl.hdcTmp);
+//	}
 }
 
 // 初始化棋局
@@ -29,6 +36,8 @@ void Board::Startup(void)
 	pos.Startup();
 	sqSelected = 0;
 	mvLast = 0;
+	search = new Search(pos);
+
 }
 
 // 绘制棋盘
@@ -146,7 +155,7 @@ void Board::ClickSquare(int sq)
 		{
 			//MakeMove有一个很巧妙的地方，即切换了走子方（sdPlayer）
 			//即以下的IsMate() Checked()都是判断对方
-			if(pos.MakeMove(mv))
+			if(pos.MakeMove(mv, pc))
 			{
 				mvLast = mv;
 				DrawSquare(sqSelected, DRAW_SELECTED);
@@ -162,6 +171,7 @@ void Board::ClickSquare(int sq)
 				{
 					// 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
 					this->PlayResWav(pos.Checked() ? Resource::check : pc != 0 ? Resource::capture : Resource::move);
+					this->ResponseMove(); // 轮到电脑走棋
 				}
 			}
 			else
@@ -170,6 +180,38 @@ void Board::ClickSquare(int sq)
 			}
 		}
 		// 如果根本就不符合走法(例如马不走日字)，那么程序不予理会
+	}
+}
+
+// 电脑回应一步棋
+void Board::ResponseMove(void)
+{
+	L << "ResponseMove";
+	int pcCaptured;
+	// 电脑走一步棋
+	//SetCursor((HCURSOR) LoadImage(NULL, IDC_WAIT, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
+	search->SearchMain();
+	L << "1";
+	//SetCursor((HCURSOR) LoadImage(NULL, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
+	pos.MakeMove(search->mvResult, pcCaptured);
+	L << "2";
+	// 清除上一步棋的选择标记
+	DrawSquare(SRC(mvLast));
+	DrawSquare(DST(mvLast));
+	// 把电脑走的棋标记出来
+	mvLast = search->mvResult;
+	DrawSquare(SRC(mvLast), DRAW_SELECTED);
+	DrawSquare(DST(mvLast), DRAW_SELECTED);
+	if (pos.IsMate())
+	{
+		// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
+		PlayResWav(Resource::loss);
+		MessageBoxMute("请再接再厉！");
+	}
+	else
+	{
+		// 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
+		PlayResWav(pos.Checked() ? Resource::check2 : pcCaptured != 0 ? Resource::capture2 : Resource::move2);
 	}
 }
 

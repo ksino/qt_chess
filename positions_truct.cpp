@@ -8,6 +8,21 @@ PositionStruct::PositionStruct()
 
 }
 
+// 初始化棋盘
+void PositionStruct::Startup(void)
+{
+	int sq, pc;
+	sdPlayer = vlWhite = vlBlack = nDistance = 0;
+	memset(ucpcSquares, 0, 256);
+	for (sq = 0; sq < 256; sq ++)
+	{
+		pc = cucpcStartup[sq];
+		if (pc != 0)
+		{
+			AddPiece(sq, pc);
+		}
+	}
+}
 
 // 搬一步棋的棋子
 int PositionStruct::MovePiece(int mv)
@@ -16,9 +31,12 @@ int PositionStruct::MovePiece(int mv)
 	sqSrc = SRC(mv);
 	sqDst = DST(mv);
 	pcCaptured = ucpcSquares[sqDst];
-	DelPiece(sqDst);
+	if (pcCaptured != 0)
+	{
+		DelPiece(sqDst, pcCaptured);
+	}
 	pc = ucpcSquares[sqSrc];
-	DelPiece(sqSrc);
+	DelPiece(sqSrc, pc);
 	AddPiece(sqDst, pc);
 	return pcCaptured;
 }
@@ -30,25 +48,25 @@ void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 	sqSrc = SRC(mv);
 	sqDst = DST(mv);
 	pc = ucpcSquares[sqDst];
-	DelPiece(sqDst);
+	DelPiece(sqDst, pc);
 	AddPiece(sqSrc, pc);
-	AddPiece(sqDst, pcCaptured);
+	if (pcCaptured != 0)
+	{
+		AddPiece(sqDst, pcCaptured);
+	}
 }
 
 // 走一步棋
-bool PositionStruct::MakeMove(int mv)
+bool PositionStruct::MakeMove(int mv, int &pcCaptured)
 {
-	int pc;
-	//返回终点棋子值
-	pc = MovePiece(mv);
-	//移动棋子后的新局面，可能会产生被将军的情况
-	//如果正在被将军，撤销这一步棋
+	pcCaptured = MovePiece(mv);
 	if (Checked())
 	{
-		UndoMovePiece(mv, pc);
+		UndoMovePiece(mv, pcCaptured);
 		return false;
 	}
 	ChangeSide();
+	nDistance ++;
 	return true;
 }
 
