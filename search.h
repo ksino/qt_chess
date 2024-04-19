@@ -15,7 +15,8 @@ public:
 	Compare(int *h): history(h) {}
 	bool operator () (int mv1, int mv2)
 	{
-		return history[mv2] - history[mv1];
+		//按照历史表的顺序，由大以小排列
+		return history[mv1] > history[mv2];
 	}
 };
 
@@ -26,7 +27,7 @@ public:
 	Search(PositionStruct &pos);
 	int mvResult;             // 电脑走的棋
 	int nHistoryTable[65536]; // 历史表
-	PositionStruct pos;
+	PositionStruct *pos;
 
 	int SearchFull(int vlAlpha, int vlBeta, int nDepth);
 	void SearchMain(void);

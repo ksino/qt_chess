@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.3.0\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.3.1\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -34,7 +34,7 @@ const int PIECE_PAWN = 6;
 
 // 其他常数
 const int MAX_GEN_MOVES = 128; // 最大的生成走法数
-const int LIMIT_DEPTH = 32;    // 最大的搜索深度
+const int LIMIT_DEPTH = 4;    // 最大的搜索深度
 const int MATE_VALUE = 10000;  // 最高分值，即将死的分值
 const int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
 const int ADVANCED_VALUE = 3;  // 先行权分值
@@ -45,6 +45,14 @@ const QString PIECE_NAME[] =
 	"oo", "", "", "", "", "", "", "",
 	"rk", "ra", "rb", "rn", "rr", "rc", "rp", "",
 	"bk", "ba", "bb", "bn", "br", "bc", "bp", "",
+};
+
+//棋子值对应的图片名称
+const QString PIECE_NAME_CN[] =
+{
+	"oo", "", "", "", "", "", "", "",
+	"红帅", "红仕", "红相", "红馬", "红車", "红砲", "红兵", "",
+	"黑将", "黑士", "黑象", "黑馬", "黑車", "黑炮", "黑卒", "",
 };
 
 // 判断棋子是否在棋盘中的数组
@@ -513,5 +521,6 @@ public:
 };
 
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
+#define __DEBUG
 
 #endif // CONST_DATA_H
