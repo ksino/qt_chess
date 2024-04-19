@@ -85,7 +85,6 @@ void Search::SearchMain(void)
 	int i, t, vl;
 
 	// 初始化
-	L << "SearchMain";
 	memset(nHistoryTable, 0, 65536 * sizeof(int)); // 清空历史表
 	t = clock();       // 初始化定时器
 	pos->nDistance = 0; // 初始步数
@@ -119,5 +118,3 @@ void Search::print(int *mv, int len)
 }
 
 }
-
-

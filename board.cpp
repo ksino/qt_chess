@@ -47,7 +47,7 @@ void Board::DrawBoard()
 	// 画棋盘
 	m_frameBoard = new QFrame(this);
 	m_frameBoard->setGeometry(QRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT));
-#ifndef __DEBUG
+#if !HIDE_PICTURE
 	m_frameBoard->setStyleSheet("border-image: url(:/images/board.jpg)");
 #endif
 
@@ -105,7 +105,7 @@ inline void Board::DrawTransBmp(int sq, bool selected)
 	square[sq]->setStyleSheet(QString("border-image: url(:/images/%1.gif)").arg(s));
 	//根据格子上的棋子值绘制对应前景图片
 	int pc = pos.GetSquare(sq);
-#ifndef __DEBUG
+#if !HIDE_PICTURE
 	square[sq]->setPixmap(QPixmap(QString(":/images/%1.gif").arg(PIECE_NAME[pc])));
 #else
 	square[sq]->setPixmap(QPixmap(QString(":/images/thinking.gif")));
@@ -196,9 +196,7 @@ void Board::ResponseMove(void)
 	L << "ResponseMove";
 	int pcCaptured;
 	// 电脑走一步棋
-	//SetCursor((HCURSOR) LoadImage(NULL, IDC_WAIT, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 	search->SearchMain();
-	//SetCursor((HCURSOR) LoadImage(NULL, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_DEFAULTSIZE | LR_SHARED));
 	pos.MakeMove(search->mvResult, pcCaptured);
 	// 清除上一步棋的选择标记
 	DrawSquare(SRC(mvLast));
