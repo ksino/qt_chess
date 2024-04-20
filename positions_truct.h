@@ -18,10 +18,6 @@ public:
 	int nDistance;                  // 距离根节点的步数
 
 	void Startup(void);              // 初始化棋盘
-//	{
-//		sdPlayer = 0;
-//		memcpy(ucpcSquares, cucpcStartup, 256);
-//	}
 
 	uint8_t GetSquare(int sq)              // 取得格子上的棋子值
 	{

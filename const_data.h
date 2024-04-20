@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.3.2\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.3.3\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -34,7 +34,7 @@ const int PIECE_PAWN = 6;
 
 // 其他常数
 const int MAX_GEN_MOVES = 128; // 最大的生成走法数
-const int LIMIT_DEPTH = 8;    // 最大的搜索深度
+const int LIMIT_DEPTH = 4;    // 最大的搜索深度
 const int MATE_VALUE = 10000;  // 最高分值，即将死的分值
 const int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
 const int ADVANCED_VALUE = 3;  // 先行权分值

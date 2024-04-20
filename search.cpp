@@ -93,6 +93,7 @@ void Search::SearchMain(void)
 	for (i = 1; i <= LIMIT_DEPTH; i ++)
 	{
 		vl = SearchFull(-MATE_VALUE, MATE_VALUE, i);
+		L << "serch" << i << " v1=" << vl;
 		// 搜索到杀棋，就终止搜索
 		if (vl > WIN_VALUE || vl < -WIN_VALUE)
 		{
@@ -101,6 +102,7 @@ void Search::SearchMain(void)
 		// 超过一秒，就终止搜索
 		if (clock() - t > CLOCKS_PER_SEC)
 		{
+			L << "Time out";
 			break;
 		}
 	}

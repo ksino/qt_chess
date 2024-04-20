@@ -12,7 +12,10 @@ PositionStruct::PositionStruct()
 void PositionStruct::Startup(void)
 {
 	int sq, pc;
-	sdPlayer = vlWhite = vlBlack = nDistance = 0;
+	sdPlayer = 0;
+	vlWhite = 0;
+	vlBlack = 0;
+	nDistance = 0;
 	memset(ucpcSquares, 0, 256);
 	for (sq = 0; sq < 256; sq ++)
 	{
