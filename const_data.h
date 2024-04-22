@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.3.3\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.3.4\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -50,7 +50,7 @@ const QString PIECE_NAME[] =
 //棋子值对应的图片名称
 const QString PIECE_NAME_CN[] =
 {
-	"oo", "", "", "", "", "", "", "",
+	"空白", "", "", "", "", "", "", "",
 	"红帅", "红仕", "红相", "红馬", "红車", "红砲", "红兵", "",
 	"黑将", "黑士", "黑象", "黑馬", "黑車", "黑炮", "黑卒", "",
 };
@@ -520,8 +520,25 @@ public:
 	Q_ENUM(Sound)
 };
 
+
+
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
 //不显示图片
 #define HIDE_PICTURE 0
+
+//打印棋子的走法
+inline void move2Iccs(int pc, int mv)
+{
+	auto sqSrc = SRC(mv);
+	auto sqDst = DST(mv);
+	QString step_str = QString("%1: %2%3-%4%5");
+	auto src_x = QString((char)('A' + FILE_X(sqSrc) - FILE_LEFT));
+	auto src_y = QString((char)('9' - RANK_Y(sqSrc) + RANK_TOP));
+	auto dst_x = QString((char)('A' + FILE_X(sqDst) - FILE_LEFT));
+	auto dst_y = QString((char)('9' - RANK_Y(sqDst) + RANK_TOP));
+	auto name = PIECE_NAME_CN[pc];
+	step_str = step_str.arg(name, src_x, src_y, dst_x, dst_y);
+	L << step_str;
+}
 
 #endif // CONST_DATA_H

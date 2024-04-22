@@ -23,6 +23,7 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth)
 	// 1. 到达水平线，则返回局面评价值
 	if (nDepth == 0)
 	{
+		//L << "return";
 		return pos->Evaluate();
 	}
 
@@ -38,6 +39,7 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth)
 	{
 		if (pos->MakeMove(mvs[i], pcCaptured))
 		{
+			//L << "search in";
 			vl = -SearchFull(-vlBeta, -vlAlpha, nDepth - 1);
 			pos->UndoMakeMove(mvs[i], pcCaptured);
 
@@ -93,7 +95,6 @@ void Search::SearchMain(void)
 	for (i = 1; i <= LIMIT_DEPTH; i ++)
 	{
 		vl = SearchFull(-MATE_VALUE, MATE_VALUE, i);
-		L << "serch" << i << " v1=" << vl;
 		// 搜索到杀棋，就终止搜索
 		if (vl > WIN_VALUE || vl < -WIN_VALUE)
 		{
@@ -118,5 +119,6 @@ void Search::print(int *mv, int len)
 	}
 	qdebug << "]";
 }
+
 
 }

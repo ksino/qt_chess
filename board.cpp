@@ -110,7 +110,6 @@ inline void Board::DrawTransBmp(int sq, bool selected)
 #else
 	square[sq]->setPixmap(QPixmap(QString(":/images/thinking.gif")));
 #endif
-	L << "DrawTransBmp" << PIECE_NAME_CN[pc];
 }
 
 // 播放资源声音
@@ -120,7 +119,6 @@ inline void Board::PlayResWav(Resource::Sound name)
 	//将Enum转化成字符串
 	QString playName = QString(m.valueToKey(name));
 	QSound::play(QString(":/sounds/%1.wav").arg(playName));
-	L << "PlayResWav" << playName;
 }
 
 // 点击格子事件处理
@@ -131,7 +129,7 @@ void Board::ClickSquare(int sq)
 	int mv;
 	sq = bFlipped ? SQUARE_FLIP(sq) : sq;
 	int pc = pos.GetSquare(sq);
-	L << "sq=" << sq << "pc=" << pc << "sqSelected=" << sqSelected;
+	L << "Click " << PIECE_NAME_CN[pos.GetSquare(sq)];
 
 	if ((pc & SIDE_TAG(pos.sdPlayer)) != 0)
 	{
@@ -164,6 +162,7 @@ void Board::ClickSquare(int sq)
 			//即以下的IsMate() Checked()都是判断对方
 			if(pos.MakeMove(mv, pc))
 			{
+				move2Iccs(pos.GetSquare(sq), mv);
 				mvLast = mv;
 				DrawSquare(sqSelected, DRAW_SELECTED);
 				DrawSquare(sq, DRAW_SELECTED);
@@ -203,6 +202,7 @@ void Board::ResponseMove(void)
 	DrawSquare(DST(mvLast));
 	// 把电脑走的棋标记出来
 	mvLast = search->mvResult;
+	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);
 	if (pos.IsMate())
