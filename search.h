@@ -1,7 +1,7 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-#include "positions_truct.h"
+#include "positions_struct.h"
 
 namespace Chess
 {
@@ -13,7 +13,7 @@ private:
 	int *history;
 public:
 	Compare(int *h): history(h) {}
-	bool operator () (int mv1, int mv2)
+	bool operator()(int mv1, int mv2)
 	{
 		//按照历史表的顺序，由大以小排列
 		return history[mv1] > history[mv2];

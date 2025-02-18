@@ -9,16 +9,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    positions_truct.cpp \
     board.cpp \
+    positions_struct.cpp \
     search.cpp \
     square.cpp
 
 HEADERS += \
     const_data.h \
     mainwindow.h \
-    positions_truct.h \
     board.h \
+    positions_struct.h \
     search.h \
     square.h
 
