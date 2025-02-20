@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.4.1\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.4.3\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -43,6 +43,10 @@ const int DRAW_VALUE = 20;     // 和棋时返回的分数(取负值)
 const int ADVANCED_VALUE = 3;  // 先行权分值
 const int NULL_MARGIN = 400;   // 空步裁剪的子力边界
 const int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度
+// "GenerateMoves"参数
+const bool GEN_CAPTURE = true;
+// "SearchFull"的参数
+const bool NO_NULL = true;
 
 //棋子值对应的图片名称
 const QString PIECE_NAME[] =
@@ -335,6 +339,14 @@ static const uint8_t cucvlPiecePos[7][256] =
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0
 	}
+};
+
+// MVV/LVA每种子力的价值
+inline constexpr char cucMvvLva[24] =
+{
+	0, 0, 0, 0, 0, 0, 0, 0,
+	5, 1, 1, 3, 4, 3, 2, 0,
+	5, 1, 1, 3, 4, 3, 2, 0
 };
 
 // 判断棋子是否在棋盘中

@@ -37,6 +37,7 @@ void Board::Startup(void)
 	pos.InitZobrist();
 	sqSelected = 0;
 	mvLast = 0;
+	bGameOver = false;
 	search = new Search(pos);
 //	search->pos = pos;
 
@@ -128,6 +129,7 @@ void Board::ClickSquare(int sq)
 	//sq 点击棋子在数组中的索引
 	//pc 点击棋子在数组中的值
 	int mv;
+	int vlRep;
 	sq = bFlipped ? SQUARE_FLIP(sq) : sq;
 	int pc = pos.GetSquare(sq);
 	L << "Click " << PIECE_NAME_CN[pos.GetSquare(sq)];
@@ -151,7 +153,7 @@ void Board::ClickSquare(int sq)
 		// 播放点击的声音
 		this->PlayResWav(Resource::click);
 	}
-	else if(sqSelected != 0)
+	else if(sqSelected != 0 && !bGameOver)
 	{
 		// 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
 		//生成走法
@@ -161,23 +163,45 @@ void Board::ClickSquare(int sq)
 		{
 			//MakeMove有一个很巧妙的地方，即切换了走子方（sdPlayer）
 			//即以下的IsMate() Checked()都是判断对方
-			if(pos.MakeMove(mv, pc))
+			if(pos.MakeMove(mv))
 			{
 				move2Iccs(pos.GetSquare(sq), mv);
 				mvLast = mv;
 				DrawSquare(sqSelected, DRAW_SELECTED);
 				DrawSquare(sq, DRAW_SELECTED);
 				sqSelected = 0;
+				// 检查重复局面
+				vlRep = pos.RepStatus(3);
 				if(pos.IsMate())
 				{
 					// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
 					PlayResWav(Resource::win);
 					MessageBoxMute("祝贺你取得胜利！");
+					bGameOver = true;
+				}
+				else if(vlRep > 0)
+				{
+					vlRep = pos.RepValue(vlRep);
+					// 注意："vlRep"是对电脑来说的分值
+					PlayResWav(vlRep > WIN_VALUE ? Resource::loss : vlRep < -WIN_VALUE ? Resource::win : Resource::draw);
+					MessageBoxMute(vlRep > WIN_VALUE ? "长打作负，请不要气馁！" :
+					               vlRep < -WIN_VALUE ? "电脑长打作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！");
+					bGameOver = true;
+				}
+				else if(pos.nMoveNum > 100)
+				{
+					PlayResWav(Resource::draw);
+					MessageBoxMute("超过自然限着作和，辛苦了！");
+					bGameOver = true;
 				}
 				else
 				{
 					// 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
-					this->PlayResWav(pos.Checked() ? Resource::check : pc != 0 ? Resource::capture : Resource::move);
+					this->PlayResWav(pos.Checked() ? Resource::check : pos.Captured() ? Resource::capture : Resource::move);
+					if(pos.Captured())
+					{
+						pos.SetIrrev();
+					}
 					this->ResponseMove(); // 轮到电脑走棋
 				}
 			}
@@ -194,10 +218,11 @@ void Board::ClickSquare(int sq)
 void Board::ResponseMove(void)
 {
 	L << "ResponseMove";
+	int vlRep;
 	int pcCaptured;
 	// 电脑走一步棋
 	search->SearchMain();
-	pos.MakeMove(search->mvResult, pcCaptured);
+	pos.MakeMove(search->mvResult);
 	// 清除上一步棋的选择标记
 	DrawSquare(SRC(mvLast));
 	DrawSquare(DST(mvLast));
@@ -206,16 +231,38 @@ void Board::ResponseMove(void)
 	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);
+	// 检查重复局面
+	vlRep = pos.RepStatus(3);
 	if(pos.IsMate())
 	{
 		// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
 		PlayResWav(Resource::loss);
 		MessageBoxMute("请再接再厉！");
+		bGameOver = true;
+	}
+	else if(vlRep > 0)
+	{
+		vlRep = pos.RepValue(vlRep);
+		// 注意："vlRep"是对玩家来说的分值
+		PlayResWav(vlRep < -WIN_VALUE ? Resource::loss : vlRep > WIN_VALUE ? Resource::win : Resource::draw);
+		MessageBoxMute(vlRep < -WIN_VALUE ? "长打作负，请不要气馁！" :
+		               vlRep > WIN_VALUE ? "电脑长打作负，祝贺你取得胜利！" : "双方不变作和，辛苦了！");
+		bGameOver = true;
+	}
+	else if(pos.nMoveNum > 100)
+	{
+		PlayResWav(Resource::draw);
+		MessageBoxMute("超过自然限着作和，辛苦了！");
+		bGameOver = true;
 	}
 	else
 	{
 		// 如果没有分出胜负，那么播放将军、吃子或一般走子的声音
-		PlayResWav(pos.Checked() ? Resource::check2 : pcCaptured != 0 ? Resource::capture2 : Resource::move2);
+		PlayResWav(pos.Checked() ? Resource::check2 : pos.Captured() ? Resource::capture2 : Resource::move2);
+		if(pos.Captured())
+		{
+			pos.SetIrrev();
+		}
 	}
 }
 

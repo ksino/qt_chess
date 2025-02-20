@@ -17,6 +17,7 @@ void PositionStruct::Startup(void)
 	vlBlack = 0;
 	nDistance = 0;
 	memset(ucpcSquares, 0, 256);
+	zobr.InitZero();
 	for(sq = 0; sq < 256; sq ++)
 	{
 		pc = cucpcStartup[sq];
@@ -25,6 +26,7 @@ void PositionStruct::Startup(void)
 			AddPiece(sq, pc);
 		}
 	}
+	SetIrrev();
 }
 
 // 搬一步棋的棋子
@@ -60,8 +62,12 @@ void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 }
 
 // 走一步棋
-bool PositionStruct::MakeMove(int mv, int &pcCaptured)
+bool PositionStruct::MakeMove(int mv)
 {
+	int pcCaptured;
+	quint32 dwKey;
+
+	dwKey = zobr.dwKey;
 	pcCaptured = MovePiece(mv);
 	if(Checked())
 	{
@@ -69,12 +75,14 @@ bool PositionStruct::MakeMove(int mv, int &pcCaptured)
 		return false;
 	}
 	ChangeSide();
+	mvsList[nMoveNum].Set(mv, pcCaptured, Checked(), dwKey);
+	nMoveNum ++;
 	nDistance ++;
 	return true;
 }
 
-// 生成所有走法
-int PositionStruct::GenerateMoves(int *mvs) const
+// 生成所有走法，如果"bCapture"为"TRUE"则只生成吃子走法
+int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 {
 	int i, j, nGenMoves, nDelta, sqSrc, sqDst;
 	int pcSelfSide, pcOppSide, pcSrc, pcDst;
@@ -107,7 +115,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 				pcDst = ucpcSquares[sqDst];
 				//目标位置为空或对方棋子，即是合法走法
-				if((pcDst & pcSelfSide) == 0)
+				if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 				{
 					mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 					nGenMoves ++;
@@ -123,7 +131,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 					continue;
 				}
 				pcDst = ucpcSquares[sqDst];
-				if((pcDst & pcSelfSide) == 0)
+				if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 				{
 					mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 					nGenMoves ++;
@@ -140,7 +148,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 				}
 				sqDst += ccAdvisorDelta[i];
 				pcDst = ucpcSquares[sqDst];
-				if((pcDst & pcSelfSide) == 0)
+				if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 				{
 					mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 					nGenMoves ++;
@@ -163,7 +171,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 						continue;
 					}
 					pcDst = ucpcSquares[sqDst];
-					if((pcDst & pcSelfSide) == 0)
+					if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 					{
 						mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 						nGenMoves ++;
@@ -181,8 +189,11 @@ int PositionStruct::GenerateMoves(int *mvs) const
 					pcDst = ucpcSquares[sqDst];
 					if(pcDst == 0)
 					{
-						mvs[nGenMoves] = MOVE(sqSrc, sqDst);
-						nGenMoves ++;
+						if(!bCapture)
+						{
+							mvs[nGenMoves] = MOVE(sqSrc, sqDst);
+							nGenMoves ++;
+						}
 					}
 					else
 					{
@@ -207,8 +218,11 @@ int PositionStruct::GenerateMoves(int *mvs) const
 					pcDst = ucpcSquares[sqDst];
 					if(pcDst == 0)
 					{
-						mvs[nGenMoves] = MOVE(sqSrc, sqDst);
-						nGenMoves ++;
+						if(!bCapture)
+						{
+							mvs[nGenMoves] = MOVE(sqSrc, sqDst);
+							nGenMoves ++;
+						}
 					}
 					else
 					{
@@ -238,7 +252,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 			if(IN_BOARD(sqDst))
 			{
 				pcDst = ucpcSquares[sqDst];
-				if((pcDst & pcSelfSide) == 0)
+				if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 				{
 					mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 					nGenMoves ++;
@@ -252,7 +266,7 @@ int PositionStruct::GenerateMoves(int *mvs) const
 					if(IN_BOARD(sqDst))
 					{
 						pcDst = ucpcSquares[sqDst];
-						if((pcDst & pcSelfSide) == 0)
+						if(bCapture ? (pcDst & pcOppSide) != 0 : (pcDst & pcSelfSide) == 0)
 						{
 							mvs[nGenMoves] = MOVE(sqSrc, sqDst);
 							nGenMoves ++;
@@ -475,6 +489,39 @@ bool PositionStruct::IsMate(void)
 	}
 	//如果所有走法走完，没有返回false，即已被杀死
 	return true;
+}
+
+// 检测重复局面
+int PositionStruct::RepStatus(int nRecur) const
+{
+	bool bSelfSide, bPerpCheck, bOppPerpCheck;
+	const MoveStruct *lpmvs;
+
+	bSelfSide = false;
+	bPerpCheck = bOppPerpCheck = true;
+	lpmvs = mvsList + nMoveNum - 1;
+	while(lpmvs->wmv != 0 && lpmvs->ucpcCaptured == 0)
+	{
+		if(bSelfSide)
+		{
+			bPerpCheck = bPerpCheck && lpmvs->ucbCheck;
+			if(lpmvs->dwKey == zobr.dwKey)
+			{
+				nRecur --;
+				if(nRecur == 0)
+				{
+					return 1 + (bPerpCheck ? 2 : 0) + (bOppPerpCheck ? 4 : 0);
+				}
+			}
+		}
+		else
+		{
+			bOppPerpCheck = bOppPerpCheck && lpmvs->ucbCheck;
+		}
+		bSelfSide = !bSelfSide;
+		lpmvs --;
+	}
+	return 0;
 }
 
 }

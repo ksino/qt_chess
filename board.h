@@ -39,6 +39,7 @@ private:
 	int mvLast;
 	// 是否翻转棋盘
 	bool bFlipped {false};
+	bool bGameOver;  // 是否游戏结束(不让继续玩下去)
 	PositionStruct pos; // 局面实例
 	//棋盘显示控件
 	QFrame *m_frameBoard;
