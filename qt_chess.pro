@@ -12,7 +12,8 @@ SOURCES += \
     board.cpp \
     positions_struct.cpp \
     search.cpp \
-    square.cpp
+    square.cpp \
+    zobrist.cpp
 
 HEADERS += \
     const_data.h \
@@ -20,7 +21,8 @@ HEADERS += \
     board.h \
     positions_struct.h \
     search.h \
-    square.h
+    square.h \
+    zobrist.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

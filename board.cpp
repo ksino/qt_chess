@@ -34,6 +34,7 @@ void Board::init()
 void Board::Startup(void)
 {
 	pos.Startup();
+	pos.InitZobrist();
 	sqSelected = 0;
 	mvLast = 0;
 	search = new Search(pos);
@@ -131,17 +132,17 @@ void Board::ClickSquare(int sq)
 	int pc = pos.GetSquare(sq);
 	L << "Click " << PIECE_NAME_CN[pos.GetSquare(sq)];
 
-	if ((pc & SIDE_TAG(pos.sdPlayer)) != 0)
+	if((pc & SIDE_TAG(pos.sdPlayer)) != 0)
 	{
 		// 如果点击自己的子，那么直接选中该子
-		if (sqSelected != 0)
+		if(sqSelected != 0)
 		{
 			//如果之前点击的格子是自己的子，清除选中状态
 			DrawSquare(sqSelected, false);
 		}
 		sqSelected = sq;
 		DrawSquare(sq, DRAW_SELECTED);
-		if (mvLast != 0)
+		if(mvLast != 0)
 		{
 			//如果对方走了一步，清除起始和终点格子的选中状态
 			DrawSquare(SRC(mvLast), false);
@@ -150,7 +151,7 @@ void Board::ClickSquare(int sq)
 		// 播放点击的声音
 		this->PlayResWav(Resource::click);
 	}
-	else if (sqSelected != 0)
+	else if(sqSelected != 0)
 	{
 		// 如果点击的不是自己的子，但有子选中了(一定是自己的子)，那么走这个子
 		//生成走法
@@ -167,7 +168,7 @@ void Board::ClickSquare(int sq)
 				DrawSquare(sqSelected, DRAW_SELECTED);
 				DrawSquare(sq, DRAW_SELECTED);
 				sqSelected = 0;
-				if (pos.IsMate())
+				if(pos.IsMate())
 				{
 					// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
 					PlayResWav(Resource::win);
@@ -205,7 +206,7 @@ void Board::ResponseMove(void)
 	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);
-	if (pos.IsMate())
+	if(pos.IsMate())
 	{
 		// 如果分出胜负，那么播放胜负的声音，并且弹出不带声音的提示框
 		PlayResWav(Resource::loss);

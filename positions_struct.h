@@ -3,9 +3,27 @@
 
 #include <stdint.h>
 #include <const_data.h>
+#include "zobrist.h"
 
 namespace Chess
 {
+// 历史走法信息(占4字节)
+class MoveStruct
+{
+public:
+	quint16 wmv;          // 走法信息
+	quint8 ucpcCaptured;  // 被吃掉的棋子
+	quint8 ucbCheck;      // 是否将军
+	quint32 dwKey;        // 哈希键值
+
+	void Set(int mv, int pcCaptured, bool bCheck, quint32 dwKey_)
+	{
+		wmv = static_cast<quint16>(mv);
+		ucpcCaptured = static_cast<quint8>(pcCaptured);
+		ucbCheck = static_cast<quint8>(bCheck);
+		dwKey = dwKey_;
+	}
+};
 
 // 局面结构
 class PositionStruct
@@ -16,8 +34,15 @@ public:
 	uint8_t ucpcSquares[256];          // 棋盘上的棋子
 	int vlWhite, vlBlack;           // 红、黑双方的子力价值
 	int nDistance;                  // 距离根节点的步数
+	Zobrist zobrist;
+	ZobristStruct zobr;             // Zobrist
 
 	void Startup(void);              // 初始化棋盘
+
+	void InitZobrist(void)
+	{
+		zobrist.InitZobrist();
+	}
 
 	uint8_t GetSquare(int sq)              // 取得格子上的棋子值
 	{
@@ -33,7 +58,7 @@ public:
 	{
 		ucpcSquares[sq] = pc;
 		// 红方加分，黑方(注意"cucvlPiecePos"取值要颠倒)减分
-		if (pc < 16)
+		if(pc < 16)
 		{
 			vlWhite += cucvlPiecePos[pc - 8][sq];
 		}
@@ -47,7 +72,7 @@ public:
 	{
 		ucpcSquares[sq] = 0;
 		// 红方减分，黑方(注意"cucvlPiecePos"取值要颠倒)加分
-		if (pc < 16)
+		if(pc < 16)
 		{
 			vlWhite -= cucvlPiecePos[pc - 8][sq];
 		}

@@ -35,10 +35,14 @@ const int PIECE_PAWN = 6;
 
 // 其他常数
 const int MAX_GEN_MOVES = 128; // 最大的生成走法数
-const int LIMIT_DEPTH = 4;    // 最大的搜索深度
+const int MAX_MOVES = 256;     // 最大的历史走法数
+const int LIMIT_DEPTH = 64;    // 最大的搜索深度
 const int MATE_VALUE = 10000;  // 最高分值，即将死的分值
 const int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
+const int DRAW_VALUE = 20;     // 和棋时返回的分数(取负值)
 const int ADVANCED_VALUE = 3;  // 先行权分值
+const int NULL_MARGIN = 400;   // 空步裁剪的子力边界
+const int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度
 
 //棋子值对应的图片名称
 const QString PIECE_NAME[] =
