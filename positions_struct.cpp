@@ -81,18 +81,18 @@ int PositionStruct::GenerateMoves(int *mvs) const
 	// 生成所有走法，需要经过以下几个步骤：
 
 	nGenMoves = 0;
+	//确认当前走子方是红或黑
 	pcSelfSide = SIDE_TAG(sdPlayer);
 	pcOppSide = OPP_SIDE_TAG(sdPlayer);
 	for(sqSrc = 0; sqSrc < 256; sqSrc ++)
 	{
-
 		// 1. 找到一个本方棋子，再做以下判断：
 		pcSrc = ucpcSquares[sqSrc];
+		// 不是自己的子 跳过
 		if((pcSrc & pcSelfSide) == 0)
 		{
 			continue;
 		}
-
 		// 2. 根据棋子确定走法
 		switch(pcSrc - pcSelfSide)
 		{
