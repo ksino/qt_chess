@@ -2,6 +2,16 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QPushButton>
+#include <QRadioButton>
+#include <QGroupBox>
+#include <QTextEdit>
+#include <QLabel>
+
 #include "board.h"
 
 
@@ -23,11 +33,36 @@ public:
 	~MainWindow();
 
 private:
-	Ui::MainWindow *ui;
+	QWidget *centralWidget;
+	QHBoxLayout *mainLayout;
+	QWidget *chessWidget;
+	QVBoxLayout *rightLayout;
+	QGroupBox *whoFirstGroup;
+	QVBoxLayout *whoFirstLayout;
+	QRadioButton *humanFirst;
+	QRadioButton *computerFirst;
+	QRadioButton *noComputer;
+	QPushButton *restartButton;
+	QPushButton *undoButton;
+	QGroupBox *computerLevelGroup;
+	QVBoxLayout *computerLevelLayout;
+	QRadioButton *amateurLevel;
+	QRadioButton *beginnerLevel;
+	QRadioButton *professionalLevel;
+	QGroupBox *soundGroup;
+	QVBoxLayout *soundLayout;
+	QRadioButton *soundOn;
+	QRadioButton *soundOff;
+	QGroupBox *animationGroup;
+	QVBoxLayout *animationLayout;
+	QRadioButton *animationOn;
+	QRadioButton *animationOff;
+	QTextEdit *moveHistory;
 	Board *m_board;
 
 private:
 	void init();
+	void setupUi();
 
 };
 #endif // MAINWINDOW_H

@@ -8,12 +8,13 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.3.5\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.3.6\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
 const int SQUARE_SIZE = 56;
 const int BOARD_EDGE = 8;
+//10行9列
 const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
 const int BOARD_HEIGHT = BOARD_EDGE + SQUARE_SIZE * 10 + BOARD_EDGE;
 
@@ -56,6 +57,7 @@ const QString PIECE_NAME_CN[] =
 };
 
 // 判断棋子是否在棋盘中的数组
+//inline constexpr char ccInBoard[256] =
 static const char ccInBoard[256] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
