@@ -222,12 +222,12 @@ void Board::ResponseMove(void)
 	int pcCaptured;
 	// 电脑走一步棋
 	search->SearchMain();
-	pos.MakeMove(search->mvResult);
+	pos.MakeMove(search->sd->mvResult);
 	// 清除上一步棋的选择标记
 	DrawSquare(SRC(mvLast));
 	DrawSquare(DST(mvLast));
 	// 把电脑走的棋标记出来
-	mvLast = search->mvResult;
+	mvLast = search->sd->mvResult;
 	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);

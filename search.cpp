@@ -5,9 +5,10 @@
 namespace Chess
 {
 
-Search::Search(PositionStruct &pos) : pos(&pos)
+Search::Search(PositionStruct &pos_) : pos(&pos_)
 {
-
+	sd = new SearchData();
+//	ss = new SortStruct(pos, sd);
 }
 
 int Search::SearchQuiesc(int vlAlpha, int vlBeta)
@@ -99,11 +100,10 @@ int Search::SearchQuiesc(int vlAlpha, int vlBeta)
 // 超出边界(Fail-Soft)的Alpha-Beta搜索过程
 int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 {
-	//L << "    SearchFull" << vlAlpha << vlBeta << nDepth;
-
-	int i, nGenMoves;
-	int vl, vlBest, mvBest;
-	int mvs[MAX_GEN_MOVES];
+	int nHashFlag, vl, vlBest;
+	int mv, mvBest;
+	int mvHash = 0;
+	SortStruct ss = SortStruct(pos, sd);
 	// 一个Alpha-Beta完全搜索分为以下几个阶段
 
 	if(pos->nDistance > 0)
@@ -127,7 +127,14 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 			return pos->Evaluate();
 		}
 
-		// 1-3. 尝试空步裁剪(根节点的Beta值是"MATE_VALUE"，所以不可能发生空步裁剪)
+		// 1-3. 尝试置换表裁剪，并得到置换表走法
+		vl = ProbeHash(vlAlpha, vlBeta, nDepth, mvHash);
+		if(vl > -MATE_VALUE)
+		{
+			return vl;
+		}
+
+		// 1-4. 尝试空步裁剪(根节点的Beta值是"MATE_VALUE"，所以不可能发生空步裁剪)
 		if(!bNoNull && !pos->InCheck() && pos->NullOkay())
 		{
 			pos->NullMove();
@@ -138,22 +145,25 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 				return vl;
 			}
 		}
+		else
+		{
+			mvHash = 0;
+		}
 	}
 
 	// 2. 初始化最佳值和最佳走法
+	nHashFlag = HASH_ALPHA;
 	vlBest = -MATE_VALUE; // 这样可以知道，是否一个走法都没走过(杀棋)
 	mvBest = 0;           // 这样可以知道，是否搜索到了Beta走法或PV走法，以便保存到历史表
 
-	// 3. 生成全部走法，并根据历史表排序
-	nGenMoves = pos->GenerateMoves(mvs);
-	sort(mvs, mvs + nGenMoves, [this](int mv1, int mv2)
-	{
-		return this->nHistoryTable[mv1] > this->nHistoryTable[mv2];
-	});
+	// 3. 初始化走法排序结构
+	ss.Init(mvHash);
+
 	// 4. 逐一走这些走法，并进行递归
-	for(i = 0; i < nGenMoves; i++)
+	while((mv = ss.Next()) != 0)
 	{
-		if(pos->MakeMove(mvs[i]))
+		//L << "mv" << mv;
+		if(pos->MakeMove(mv))
 		{
 			// 将军延伸
 			vl = -SearchFull(-vlBeta, -vlAlpha, pos->InCheck() ? nDepth : nDepth - 1);
@@ -165,12 +175,14 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 				vlBest = vl;        // "vlBest"就是目前要返回的最佳值，可能超出Alpha-Beta边界
 				if(vl >= vlBeta)    // 找到一个Beta走法
 				{
-					mvBest = mvs[i];  // Beta走法要保存到历史表
+					nHashFlag = HASH_BETA;
+					mvBest = mv;  // Beta走法要保存到历史表
 					break;            // Beta截断
 				}
 				if(vl > vlAlpha)    // 找到一个PV走法
 				{
-					mvBest = mvs[i];  // PV走法要保存到历史表
+					nHashFlag = HASH_PV;
+					mvBest = mv;  // PV走法要保存到历史表
 					vlAlpha = vl;     // 缩小Alpha-Beta边界
 				}
 			}
@@ -183,14 +195,16 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 		// 如果是杀棋，就根据杀棋步数给出评价
 		return pos->nDistance - MATE_VALUE;
 	}
+	// 记录到置换表
+	RecordHash(nHashFlag, vlBest, nDepth, mvBest);
 	if(mvBest != 0)
 	{
 		// 如果不是Alpha走法，就将最佳走法保存到历史表
-		nHistoryTable[mvBest] += nDepth * nDepth;
+		SetBestMove(mvBest, nDepth);
 		if(pos->nDistance == 0)
 		{
 			// 搜索根节点时，总是有一个最佳走法(因为全窗口搜索不会超出边界)，将这个走法保存下来
-			mvResult = mvBest;
+			sd->mvResult = mvBest;
 			//L << "history" << mvBest;
 		}
 	}
@@ -203,7 +217,9 @@ void Search::SearchMain(void)
 	int i, t, vl;
 
 	// 初始化
-	memset(nHistoryTable, 0, 65536 * sizeof(int)); // 清空历史表
+	memset(sd->nHistoryTable, 0, 65536 * sizeof(int)); // 清空历史表
+	memset(sd->mvKillers, 0, LIMIT_DEPTH * 2 * sizeof(int)); // 清空杀手走法表
+	memset(sd->HashTable, 0, HASH_SIZE * sizeof(HashItem));  // 清空置换表
 	t = clock();       // 初始化定时器
 	pos->nDistance = 0; // 初始步数
 
@@ -211,7 +227,6 @@ void Search::SearchMain(void)
 	for(i = 1; i <= LIMIT_DEPTH; i ++)
 	{
 		vl = SearchFull(-MATE_VALUE, MATE_VALUE, i);
-		L << "vl" << vl;
 		// 搜索到杀棋，就终止搜索
 		if(vl > WIN_VALUE || vl < -WIN_VALUE)
 		{
@@ -226,16 +241,130 @@ void Search::SearchMain(void)
 	}
 }
 
-void Search::print(int *mv, int len)
+// 提取置换表项
+int Search::ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv)
 {
-	auto qdebug = QDebug(QtDebugMsg);   // 这种直接一点，构造一个QDebug()对象
-	qdebug << len << " [";
-	for(int var = 0; var < len; ++var)
+	bool bMate; // 杀棋标志：如果是杀棋，那么不需要满足深度条件
+	HashItem hsh;
+
+	hsh = HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)];
+	if(hsh.dwLock0 != pos->zobr.dwLock0 || hsh.dwLock1 != pos->zobr.dwLock1)
 	{
-		qdebug.nospace() << mv[var] << ",";
+		mv = 0;
+		return -MATE_VALUE;
 	}
-	qdebug << "]";
+	mv = hsh.wmv;
+	bMate = false;
+	if(hsh.svl > WIN_VALUE)
+	{
+		hsh.svl -= pos->nDistance;
+		bMate = true;
+	}
+	else if(hsh.svl < -WIN_VALUE)
+	{
+		hsh.svl += pos->nDistance;
+		bMate = true;
+	}
+	if(hsh.ucDepth >= nDepth || bMate)
+	{
+		if(hsh.ucFlag == HASH_BETA)
+		{
+			return (hsh.svl >= vlBeta ? hsh.svl : -MATE_VALUE);
+		}
+		else if(hsh.ucFlag == HASH_ALPHA)
+		{
+			return (hsh.svl <= vlAlpha ? hsh.svl : -MATE_VALUE);
+		}
+		return hsh.svl;
+	}
+	return -MATE_VALUE;
 }
 
+// 保存置换表项
+void Search::RecordHash(int nFlag, int vl, int nDepth, int mv)
+{
+	HashItem hsh;
+	hsh = HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)];
+	if(hsh.ucDepth > nDepth)
+	{
+		return;
+	}
+	hsh.ucFlag = nFlag;
+	hsh.ucDepth = nDepth;
+	if(vl > WIN_VALUE)
+	{
+		hsh.svl = vl + pos->nDistance;
+	}
+	else if(vl < -WIN_VALUE)
+	{
+		hsh.svl = vl - pos->nDistance;
+	}
+	else
+	{
+		hsh.svl = vl;
+	}
+	hsh.wmv = mv;
+	hsh.dwLock0 = pos->zobr.dwLock0;
+	hsh.dwLock1 = pos->zobr.dwLock1;
+	HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)] = hsh;
+}
+
+int SortStruct::Next()
+{
+	int mv;
+	switch(nPhase)
+	{
+	// "nPhase"表示着法启发的若干阶段，依次为：
+	// 0. 置换表着法启发，完成后立即进入下一阶段；
+	case PHASE_HASH:
+		nPhase = PHASE_KILLER_1;
+		if(mvHash != 0)
+		{
+			//L << "0 PHASE_HASH" << mvHash;
+			return mvHash;
+		}
+	// 技巧：这里没有"break"，表示"switch"的上一个"case"执行完后紧接着做下一个"case"，下同
+
+	// 1. 杀手着法启发(第一个杀手着法)，完成后立即进入下一阶段；
+	case PHASE_KILLER_1:
+		nPhase = PHASE_KILLER_2;
+		if(mvKiller1 != mvHash && mvKiller1 != 0 && pos->LegalMove(mvKiller1))
+		{
+			return mvKiller1;
+		}
+
+	// 2. 杀手着法启发(第二个杀手着法)，完成后立即进入下一阶段；
+	case PHASE_KILLER_2:
+		nPhase = PHASE_GEN_MOVES;
+		if(mvKiller2 != mvHash && mvKiller2 != 0 && pos->LegalMove(mvKiller2))
+		{
+			return mvKiller2;
+		}
+
+	// 3. 生成所有着法，完成后立即进入下一阶段；
+	case PHASE_GEN_MOVES:
+		nPhase = PHASE_REST;
+		nGenMoves = pos->GenerateMoves(mvs);
+		sort(mvs, mvs + nGenMoves, [this](int mv1, int mv2)
+		{
+			return this->sd->nHistoryTable[mv1] > this->sd->nHistoryTable[mv2];
+		});
+		nIndex = 0;
+
+	// 4. 对剩余着法进行历史表启发；
+	case PHASE_REST:
+		while(nIndex < nGenMoves)
+		{
+			mv = mvs[nIndex];
+			nIndex++;
+			if(mv != mvHash && mv != mvKiller1 && mv != mvKiller2)
+			{
+				return mv;
+			}
+		}
+		break;
+	}
+	return 0;
+}
 
 }

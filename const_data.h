@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.4.4\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.5.0\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -43,6 +43,10 @@ const int DRAW_VALUE = 20;     // 和棋时返回的分数(取负值)
 const int ADVANCED_VALUE = 3;  // 先行权分值
 const int NULL_MARGIN = 400;   // 空步裁剪的子力边界
 const int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度
+const int HASH_SIZE = 1 << 20; // 置换表大小
+const int HASH_ALPHA = 1;      // ALPHA节点的置换表项
+const int HASH_BETA = 2;       // BETA节点的置换表项
+const int HASH_PV = 3;         // PV节点的置换表项
 // "GenerateMoves"参数
 const bool GEN_CAPTURE = true;
 // "SearchFull"的参数
@@ -541,10 +545,10 @@ public:
 
 
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
-//不显示图片
+// 不显示图片
 #define HIDE_PICTURE 0
 
-//打印棋子的走法
+// 打印棋子的走法
 inline void move2Iccs(int pc, int mv)
 {
 	auto sqSrc = SRC(mv);
@@ -557,6 +561,18 @@ inline void move2Iccs(int pc, int mv)
 	auto name = PIECE_NAME_CN[pc];
 	step_str = step_str.arg(name, src_x, src_y, dst_x, dst_y);
 	L << step_str;
+}
+
+// 打印数组
+inline void _print(int *mv, int len)
+{
+	auto qdebug = QDebug(QtDebugMsg);   // 这种直接一点，构造一个QDebug()对象
+	qdebug << len << " [";
+	for(int var = 0; var < len; ++var)
+	{
+		qdebug.nospace() << mv[var] << ",";
+	}
+	qdebug << "]";
 }
 
 #endif // CONST_DATA_H

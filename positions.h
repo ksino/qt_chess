@@ -141,13 +141,19 @@ public:
 	bool LegalMove(int mv) const;               // 判断走法是否合理
 	bool Checked(void) const;                   // 判断是否被将军
 	bool IsMate(void);                          // 判断是否被杀
+
+	int DrawValue(void) const                   // 和棋分值
+	{
+		return (nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
+	}
+
 	int RepStatus(int nRecur = 1) const;        // 检测重复局面
 	int RepValue(int nRepStatus) const          // 重复局面分值
 	{
 		int vlReturn;
 		vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - MATE_VALUE) +
 		           ((nRepStatus & 4) == 0 ? 0 : MATE_VALUE - nDistance);
-		return vlReturn == 0 ? -DRAW_VALUE : vlReturn;
+		return vlReturn == 0 ? DrawValue() : vlReturn;
 	}
 	bool NullOkay(void) const                   // 判断是否允许空步裁剪
 	{
