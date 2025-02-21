@@ -10,7 +10,7 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     board.cpp \
-    positions_struct.cpp \
+    positions.cpp \
     search.cpp \
     square.cpp \
     zobrist.cpp
@@ -19,7 +19,7 @@ HEADERS += \
     const_data.h \
     mainwindow.h \
     board.h \
-    positions_struct.h \
+    positions.h \
     search.h \
     square.h \
     zobrist.h

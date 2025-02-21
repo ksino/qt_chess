@@ -18,7 +18,7 @@ protected:
 	// QLabel并没有clicked信号，声明鼠标左键点击事件
 	virtual void mouseReleaseEvent(QMouseEvent * ev);
 private:
-	int sq;
+	int sq; //格子索引
 };
 
 #endif // SQUARE_H

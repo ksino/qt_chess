@@ -7,7 +7,7 @@
 #include <QLabel>
 
 #include "const_data.h"
-#include "positions_struct.h"
+#include "positions.h"
 #include "square.h"
 #include "search.h"
 

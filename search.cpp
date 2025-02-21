@@ -37,9 +37,9 @@ int Search::SearchQuiesc(int vlAlpha, int vlBeta)
 	{
 		// 4. 如果被将军，则生成全部走法
 		nGenMoves = pos->GenerateMoves(mvs);
-		sort(mvs, mvs + nGenMoves,  [this](int mv1, int mv2)
+		sort(mvs, mvs + nGenMoves, [this](int mv1, int mv2)
 		{
-			return this->MvvLva(mv2) < this->MvvLva(mv1); // 降序排序
+			return this->MvvLva(mv1) > this->MvvLva(mv2); // 降序排序
 		});
 	}
 	else
@@ -62,9 +62,9 @@ int Search::SearchQuiesc(int vlAlpha, int vlBeta)
 
 		// 6. 如果局面评价没有截断，再生成吃子走法
 		nGenMoves = pos->GenerateMoves(mvs, GEN_CAPTURE);
-		sort(mvs, mvs + nGenMoves,  [this](int mv1, int mv2)
+		sort(mvs, mvs + nGenMoves, [this](int mv1, int mv2)
 		{
-			return this->MvvLva(mv2) < this->MvvLva(mv1); // 降序排序
+			return this->MvvLva(mv1) > this->MvvLva(mv2); // 降序排序
 		});
 	}
 
@@ -146,7 +146,10 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 
 	// 3. 生成全部走法，并根据历史表排序
 	nGenMoves = pos->GenerateMoves(mvs);
-	sort(mvs, mvs + nGenMoves, Compare(nHistoryTable));
+	sort(mvs, mvs + nGenMoves, [this](int mv1, int mv2)
+	{
+		return this->nHistoryTable[mv1] > this->nHistoryTable[mv2];
+	});
 	// 4. 逐一走这些走法，并进行递归
 	for(i = 0; i < nGenMoves; i++)
 	{

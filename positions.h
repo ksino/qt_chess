@@ -1,5 +1,5 @@
-#ifndef POSITIONSTRUCT_H
-#define POSITIONSTRUCT_H
+#ifndef POSITIONS_H
+#define POSITIONS_H
 
 #include <stdint.h>
 #include <const_data.h>
@@ -163,4 +163,4 @@ public:
 
 };
 }
-#endif // POSITIONSTRUCT_H
+#endif // POSITIONS_H

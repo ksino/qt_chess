@@ -1,4 +1,4 @@
-#include "positions_struct.h"
+#include "positions.h"
 
 namespace Chess
 {
