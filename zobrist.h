@@ -3,107 +3,40 @@
 
 #include <QtGlobal>
 
+// RC4Struct类：实现RC4流密码算法，用于生成伪随机字节流
 class RC4Struct
 {
 public:
-	quint8 s[256];
-	int x, y;
+	quint8 s[256];  // RC4的状态数组，包含256个字节
+	int x, y;       // 两个状态变量，用于生成伪随机字节
 
-	void InitZero() // 用空密钥初始化密码流生成器
-	{
-		int i, j;
-		quint8 uc;
-
-		x = y = j = 0;
-		for(i = 0; i < 256; i++)
-		{
-			s[i] = i;
-		}
-		for(i = 0; i < 256; i++)
-		{
-			j = (j + s[i]) & 255;
-			uc = s[i];
-			s[i] = s[j];
-			s[j] = uc;
-		}
-	}
-
-	quint8 NextByte()   // 生成密码流的下一个字节
-	{
-		quint8 uc;
-		x = (x + 1) & 255;
-		y = (y + s[x]) & 255;
-		uc = s[x];
-		s[x] = s[y];
-		s[y] = uc;
-		return s[(s[x] + s[y]) & 255];
-	}
-
-	quint32 NextLong()   // 生成密码流的下四个字节
-	{
-		quint8 uc0, uc1, uc2, uc3;
-		uc0 = NextByte();
-		uc1 = NextByte();
-		uc2 = NextByte();
-		uc3 = NextByte();
-		return uc0 + (uc1 << 8) + (uc2 << 16) + (uc3 << 24);
-	}
+	void InitZero();       // 用空密钥初始化RC4状态数组
+	quint8 NextByte();     // 生成下一个伪随机字节
+	quint32 NextLong();    // 生成下一个32位伪随机数（4个字节）
 };
 
+// ZobristStruct类：用于存储Zobrist哈希值，支持初始化、异或操作等
 class ZobristStruct
 {
 public:
-	quint32 dwKey, dwLock0, dwLock1;
+	quint32 dwKey;   // 32位的哈希值，用于表示键
+	quint32 dwLock0; // 32位的哈希值，用于表示锁0
+	quint32 dwLock1; // 32位的哈希值，用于表示锁1
 
-	void InitZero()   // 用零填充Zobrist
-	{
-		dwKey = dwLock0 = dwLock1 = 0;
-	}
-
-	void InitRC4(RC4Struct &rc4)   // 用密码流填充Zobrist
-	{
-		dwKey = rc4.NextLong();
-		dwLock0 = rc4.NextLong();
-		dwLock1 = rc4.NextLong();
-	}
-
-	void Xor(const ZobristStruct &zobr)   // 执行XOR操作
-	{
-		dwKey ^= zobr.dwKey;
-		dwLock0 ^= zobr.dwLock0;
-		dwLock1 ^= zobr.dwLock1;
-	}
-
-	void Xor(const ZobristStruct &zobr1, const ZobristStruct &zobr2)
-	{
-		dwKey ^= zobr1.dwKey ^ zobr2.dwKey;
-		dwLock0 ^= zobr1.dwLock0 ^ zobr2.dwLock0;
-		dwLock1 ^= zobr1.dwLock1 ^ zobr2.dwLock1;
-	}
+	void InitZero();       // 用零填充Zobrist结构体
+	void InitRC4(RC4Struct &rc4);  // 用RC4生成的伪随机数初始化Zobrist结构体
+	void Xor(const ZobristStruct &zobr);  // 对当前Zobrist结构体与另一个Zobrist结构体执行异或操作
+	void Xor(const ZobristStruct &zobr1, const ZobristStruct &zobr2);  // 对当前Zobrist结构体与两个Zobrist结构体执行异或操作
 };
 
-// Zobrist表
+// Zobrist类：用于管理Zobrist表，通常用于棋类游戏中的哈希计算
 class Zobrist
 {
 public:
-	ZobristStruct Player;
-	ZobristStruct Table[14][256];
+	ZobristStruct Player;         // 用于表示玩家的Zobrist哈希值
+	ZobristStruct Table[14][256]; // Zobrist表，14行，每行256个ZobristStruct
 
-	void InitZobrist()   // 初始化Zobrist表
-	{
-		int i, j;
-		RC4Struct rc4;
-
-		rc4.InitZero();
-		Player.InitRC4(rc4);
-		for(i = 0; i < 14; i++)
-		{
-			for(j = 0; j < 256; j++)
-			{
-				Table[i][j].InitRC4(rc4);
-			}
-		}
-	}
+	void InitZobrist();  // 初始化Zobrist表
 };
 
 #endif // ZOBRISTSTRUCT_H
