@@ -11,7 +11,7 @@ Square::~Square()
 
 }
 
-// 重写鼠标释放时间 mouseReleaseEvent()
+// 重写鼠标释放事件
 void Square::mouseReleaseEvent(QMouseEvent *ev)
 {
 	Q_UNUSED(ev) // 避免未使用参数的警告

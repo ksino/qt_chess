@@ -19,15 +19,10 @@ Board::~Board()
 
 void Board::init()
 {
+	// 设定棋盘大小和坐标
+	this->setGeometry(QRect(FILE_LEFT, RANK_TOP, BOARD_WIDTH, BOARD_HEIGHT + RANK_BOTTOM));
 	this->Startup();
 	this->DrawBoard();
-//	if (Xqwl.bFlipped)
-//	{
-//		Xqwl.hdc = hdc;
-//		Xqwl.hdcTmp = CreateCompatibleDC(Xqwl.hdc);
-//		ResponseMove();
-//		DeleteDC(Xqwl.hdcTmp);
-//	}
 }
 
 // 初始化棋局
@@ -39,7 +34,6 @@ void Board::Startup(void)
 	mvLast = 0;
 	bGameOver = false;
 	search = new Search(pos);
-//	search->pos = pos;
 
 }
 
@@ -56,7 +50,7 @@ void Board::DrawBoard()
 	//格子数组的长度为256的一维数组，可以看作是16 * 16的二维数组
 	//实际棋盘占用的格子是9 * 10
 	//其它多出的格子是辅助判断，一些棋子如马象的走法，需判断是否走出边界
-	//TODO 如果开局是一些残局的时候，应该是刷新棋盘，不需再重新实例化
+	// TODO 如果开局是一些残局的时候，应该是刷新棋盘，不需再重新实例化
 	for(int sq = 0; sq < 256; sq++)
 	{
 		//初始化棋盘中的格子
@@ -65,6 +59,7 @@ void Board::DrawBoard()
 			//计算格子坐标
 			int x = SQ_X(sq);
 			int y = SQ_Y(sq);
+			// 指定格子的序号（索引）
 			square[sq] = new Square(m_frameBoard, sq);
 			square[sq]->setGeometry(x, y, SQUARE_SIZE, SQUARE_SIZE);
 			DrawSquare(sq);
@@ -95,6 +90,7 @@ int Board::SQ_Y(int sq)
 // 绘制格子
 void Board::DrawSquare(int sq, bool bSelected)
 {
+	// 玩家是黑方（后手）的话，翻转棋盘
 	int sqFlipped = bFlipped ? SQUARE_FLIP(sq) : sq;
 	DrawTransBmp(sqFlipped, bSelected);
 }
@@ -126,8 +122,8 @@ inline void Board::PlayResWav(Resource::Sound name)
 // 点击格子事件处理
 void Board::ClickSquare(int sq)
 {
-	//sq 点击棋子在数组中的索引
-	//pc 点击棋子在数组中的值
+	//sq 点击棋盘格子在数组中的索引
+	//pc 点击棋盘格子在数组中的值（大于0的是棋子，为0则空白）
 	int mv;
 	int vlRep;
 	sq = bFlipped ? SQUARE_FLIP(sq) : sq;
@@ -167,6 +163,8 @@ void Board::ClickSquare(int sq)
 			{
 				move2Iccs(pos.GetSquare(sq), mv);
 				mvLast = mv;
+				// pos.MakeMove(mv)已经更新ucpcSquares
+				// 现在刷新走棋界面
 				DrawSquare(sqSelected, DRAW_SELECTED);
 				DrawSquare(sq, DRAW_SELECTED);
 				sqSelected = 0;
@@ -200,6 +198,9 @@ void Board::ClickSquare(int sq)
 					this->PlayResWav(pos.Checked() ? Resource::check : pos.Captured() ? Resource::capture : Resource::move);
 					if(pos.Captured())
 					{
+						// TODO 20250321 16:17:35 为什么要清空历史走法
+						// （chatGPT）当棋子被吃掉时，局面的可逆性被破坏，历史表不再适用
+						// mvsList不是用于记录棋子每一步走法、悔棋
 						pos.SetIrrev();
 					}
 					this->ResponseMove(); // 轮到电脑走棋

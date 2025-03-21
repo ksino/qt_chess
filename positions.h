@@ -2,7 +2,7 @@
 #define POSITIONS_H
 
 #include <stdint.h>
-#include <const_data.h>
+#include "const_data.h"
 #include "zobrist.h"
 
 namespace Chess

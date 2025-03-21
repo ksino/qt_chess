@@ -33,9 +33,9 @@ public:
 private:
 	// "DrawSquare"参数
 	const bool DRAW_SELECTED = true;
-	// 选中的格子
+	// 选中格子的索引
 	int sqSelected;
-	//上一步棋
+	//上一步棋 通过将终点索引左移8位，和起点拼成一个数(dest << 8 | src)
 	int mvLast;
 	// 是否翻转棋盘
 	bool bFlipped {false};

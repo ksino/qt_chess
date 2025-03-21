@@ -29,7 +29,7 @@ void PositionStruct::Startup(void)
 	SetIrrev();
 }
 
-// 搬一步棋的棋子
+// 搬一步棋的棋子 返回目标格子的值
 int PositionStruct::MovePiece(int mv)
 {
 	int sqSrc, sqDst, pc, pcCaptured;
@@ -46,7 +46,7 @@ int PositionStruct::MovePiece(int mv)
 	return pcCaptured;
 }
 
-// 撤消搬一步棋的棋子
+// 撤消搬一步棋的棋子 还原起点和终点的格子值
 void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 {
 	int sqSrc, sqDst, pc;
@@ -68,13 +68,17 @@ bool PositionStruct::MakeMove(int mv)
 	quint32 dwKey;
 
 	dwKey = zobr.dwKey;
+	// 实现mv这步走法
 	pcCaptured = MovePiece(mv);
 	if(Checked())
 	{
+		// 如果这步走法导致将军 则撤回
 		UndoMovePiece(mv, pcCaptured);
 		return false;
 	}
+	// 切换对方走棋
 	ChangeSide();
+	// 记录当前走法、吃子、是否将军、哈希值
 	mvsList[nMoveNum].Set(mv, pcCaptured, Checked(), dwKey);
 	nMoveNum ++;
 	nDistance ++;

@@ -8,17 +8,19 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.5.0\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.5.1\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
 const int SQUARE_SIZE = 56;
+// 棋盘的边距
 const int BOARD_EDGE = 8;
-//10行9列
+// 棋盘10行9列
 const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
 const int BOARD_HEIGHT = BOARD_EDGE + SQUARE_SIZE * 10 + BOARD_EDGE;
 
 // 棋盘范围
+// 棋盘（数组）的左上角在16x16的起点（4行4列）
 const int RANK_TOP = 3;
 const int RANK_BOTTOM = 12;
 const int FILE_LEFT = 3;
@@ -389,6 +391,8 @@ inline int COORD_XY(int x, int y)
 // 翻转格子
 inline int SQUARE_FLIP(int sq)
 {
+	// 如果sq按从1开始计算，格子和翻转后格子的和是256
+	// 但sq按从0开始计算，格子和翻转后格子的和是256-1-1
 	return 254 - sq;
 }
 
@@ -546,14 +550,14 @@ public:
 
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
 // 不显示图片
-#define HIDE_PICTURE 0
+#define HIDE_PICTURE 1
 
 // 打印棋子的走法
 inline void move2Iccs(int pc, int mv)
 {
 	auto sqSrc = SRC(mv);
 	auto sqDst = DST(mv);
-	QString step_str = QString("%1: %2%3-%4%5");
+	QString step_str = QString("%1: %2%3->%4%5");
 	auto src_x = QString((char)('A' + FILE_X(sqSrc) - FILE_LEFT));
 	auto src_y = QString((char)('9' - RANK_Y(sqSrc) + RANK_TOP));
 	auto dst_x = QString((char)('A' + FILE_X(sqDst) - FILE_LEFT));

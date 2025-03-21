@@ -28,16 +28,14 @@ void MainWindow::setupUi()
 	setCentralWidget(centralWidget);
 	mainLayout = new QHBoxLayout(centralWidget);
 
-	// 左边显示中国象棋的背景
-	chessWidget = new QWidget(this);
+	// 左边显示棋盘
 	this->setWindowTitle(cszAbout);
+	chessWidget = new QWidget(this);
 	//新建棋盘实例
 	m_board = new Board(chessWidget);
-	//设定棋盘大小和坐标
-	m_board->setGeometry(QRect(FILE_LEFT, RANK_TOP, BOARD_WIDTH, BOARD_HEIGHT + RANK_BOTTOM));
 	mainLayout->addWidget(chessWidget, 8);
 
-	// 右边布局
+	// 右边显示选项
 	rightLayout = new QVBoxLayout();
 
 	// 1. 三个选项“谁先走，电脑先走，不用电脑”
