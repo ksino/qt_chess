@@ -6,6 +6,13 @@
 namespace Chess
 {
 
+// 开局库项结构
+struct BookItem
+{
+	quint32 dwLock;
+	quint16 wmv, wvl;
+};
+
 struct HashItem
 {
 	quint8 ucDepth;      // 深度
@@ -24,7 +31,17 @@ struct SearchData
 	int nHistoryTable[65536];      // 历史表
 	int mvKillers[LIMIT_DEPTH][2]; // 杀手走法表
 	HashItem HashTable[HASH_SIZE]; // 置换表
+	int nBookSize;                 // 开局库大小
+	BookItem BookTable[BOOK_SIZE]; // 开局库
 };
+
+static int CompareBook(const void *lpbk1, const void *lpbk2)
+{
+	quint32 dw1, dw2;
+	dw1 = ((BookItem *) lpbk1)->dwLock;
+	dw2 = ((BookItem *) lpbk2)->dwLock;
+	return dw1 > dw2 ? 1 : dw1 < dw2 ? -1 : 0;
+}
 
 
 class SortStruct
@@ -76,6 +93,10 @@ public:
 	int SearchQuiesc(int vlAlpha, int vlBeta);
 	int SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false);
 	void SearchMain(void);
+	void LoadBook(void);
+	int SearchBook(void);
+	// 根节点的Alpha-Beta搜索过程
+	int SearchRoot(int nDepth);
 	// 求MVV/LVA值
 	inline int MvvLva(int mv)
 	{

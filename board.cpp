@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QMetaEnum>
 #include <QMessageBox>
+#include <QDateTime>
 
 namespace Chess
 {
@@ -28,12 +29,14 @@ void Board::init()
 // 初始化棋局
 void Board::Startup(void)
 {
+	qsrand(QDateTime::currentDateTime().toTime_t());
 	pos.Startup();
 	pos.InitZobrist();
 	sqSelected = 0;
 	mvLast = 0;
 	bGameOver = false;
 	search = new Search(pos);
+	search->LoadBook();
 
 }
 

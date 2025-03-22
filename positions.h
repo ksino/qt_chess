@@ -39,6 +39,13 @@ public:
 	MoveStruct mvsList[MAX_MOVES];  // 历史走法信息列表
 	ZobristStruct zobr;             // Zobrist
 
+	void ClearBoard(void)           // 清空棋盘
+	{
+		sdPlayer = vlWhite = vlBlack = nDistance = 0;
+		memset(ucpcSquares, 0, 256);
+		zobr.InitZero();
+	}
+
 	void SetIrrev(void)             // 清空(初始化)历史走法信息
 	{
 		mvsList[0].Set(0, 0, Checked(), zobr.dwKey);
@@ -151,22 +158,15 @@ public:
 	int RepValue(int nRepStatus) const          // 重复局面分值
 	{
 		int vlReturn;
-		vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - MATE_VALUE) +
-		           ((nRepStatus & 4) == 0 ? 0 : MATE_VALUE - nDistance);
+		vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - BAN_VALUE) +
+		           ((nRepStatus & 4) == 0 ? 0 : BAN_VALUE - nDistance);
 		return vlReturn == 0 ? DrawValue() : vlReturn;
 	}
 	bool NullOkay(void) const                   // 判断是否允许空步裁剪
 	{
 		return (sdPlayer == 0 ? vlWhite : vlBlack) > NULL_MARGIN;
 	}
-
-
-
-
-
-
-
-
+	void Mirror(PositionStruct &posMirror) const; // 对局面镜像
 };
 }
 #endif // POSITIONS_H

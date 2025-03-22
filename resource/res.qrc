@@ -32,5 +32,6 @@
         <file>images/rp.gif</file>
         <file>images/rr.gif</file>
         <file>images/thinking.gif</file>
+        <file>BOOK.DAT</file>
     </qresource>
 </RCC>

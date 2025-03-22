@@ -1,6 +1,8 @@
 #include "search.h"
 #include <time.h>
 #include <algorithm>
+#include <QFile>
+#include <QDataStream>
 
 namespace Chess
 {
@@ -103,53 +105,49 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 	int nHashFlag, vl, vlBest;
 	int mv, mvBest;
 	int mvHash = 0;
+	int nNewDepth;
 	SortStruct ss = SortStruct(pos, sd);
 	// 一个Alpha-Beta完全搜索分为以下几个阶段
 
-	if(pos->nDistance > 0)
+	// 1. 到达水平线，则调用静态搜索(注意：由于空步裁剪，深度可能小于零)
+	if(nDepth <= 0)
 	{
-		// 1. 到达水平线，则调用静态搜索(注意：由于空步裁剪，深度可能小于零)
-		if(nDepth <= 0)
-		{
-			return SearchQuiesc(vlAlpha, vlBeta);
-		}
+		return SearchQuiesc(vlAlpha, vlBeta);
+	}
 
-		// 1-1. 检查重复局面(注意：不要在根节点检查，否则就没有走法了)
-		vl = pos->RepStatus();
-		if(vl != 0)
-		{
-			return pos->RepValue(vl);
-		}
+	// 1-1. 检查重复局面(注意：不要在根节点检查，否则就没有走法了)
+	vl = pos->RepStatus();
+	if(vl != 0)
+	{
+		return pos->RepValue(vl);
+	}
 
-		// 1-2. 到达极限深度就返回局面评价
-		if(pos->nDistance == LIMIT_DEPTH)
-		{
-			return pos->Evaluate();
-		}
+	// 1-2. 到达极限深度就返回局面评价
+	if(pos->nDistance == LIMIT_DEPTH)
+	{
+		return pos->Evaluate();
+	}
 
-		// 1-3. 尝试置换表裁剪，并得到置换表走法
-		vl = ProbeHash(vlAlpha, vlBeta, nDepth, mvHash);
-		if(vl > -MATE_VALUE)
+	// 1-3. 尝试置换表裁剪，并得到置换表走法
+	vl = ProbeHash(vlAlpha, vlBeta, nDepth, mvHash);
+	if(vl > -MATE_VALUE)
+	{
+		return vl;
+	}
+
+	// 1-4. 尝试空步裁剪(根节点的Beta值是"MATE_VALUE"，所以不可能发生空步裁剪)
+	if(!bNoNull && !pos->InCheck() && pos->NullOkay())
+	{
+		pos->NullMove();
+		vl = -SearchFull(-vlBeta, 1 - vlBeta, nDepth - NULL_DEPTH - 1, NO_NULL);
+		pos->UndoNullMove();
+		if(vl >= vlBeta)
 		{
 			return vl;
 		}
-
-		// 1-4. 尝试空步裁剪(根节点的Beta值是"MATE_VALUE"，所以不可能发生空步裁剪)
-		if(!bNoNull && !pos->InCheck() && pos->NullOkay())
-		{
-			pos->NullMove();
-			vl = -SearchFull(-vlBeta, 1 - vlBeta, nDepth - NULL_DEPTH - 1, NO_NULL);
-			pos->UndoNullMove();
-			if(vl >= vlBeta)
-			{
-				return vl;
-			}
-		}
-		else
-		{
-			mvHash = 0;
-		}
 	}
+
+
 
 	// 2. 初始化最佳值和最佳走法
 	nHashFlag = HASH_ALPHA;
@@ -166,7 +164,23 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 		if(pos->MakeMove(mv))
 		{
 			// 将军延伸
-			vl = -SearchFull(-vlBeta, -vlAlpha, pos->InCheck() ? nDepth : nDepth - 1);
+			//vl = -SearchFull(-vlBeta, -vlAlpha, pos->InCheck() ? nDepth : nDepth - 1);
+
+			nNewDepth = pos->InCheck() ? nDepth : nDepth - 1;
+			// PVS
+			if(vlBest == -MATE_VALUE)
+			{
+				vl = -SearchFull(-vlBeta, -vlAlpha, nNewDepth);
+			}
+			else
+			{
+				vl = -SearchFull(-vlAlpha - 1, -vlAlpha, nNewDepth);
+				if(vl > vlAlpha && vl < vlBeta)
+				{
+					vl = -SearchFull(-vlBeta, -vlAlpha, nNewDepth);
+				}
+			}
+
 			pos->UndoMakeMove();
 
 			// 5. 进行Alpha-Beta大小判断和截断
@@ -201,12 +215,12 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 	{
 		// 如果不是Alpha走法，就将最佳走法保存到历史表
 		SetBestMove(mvBest, nDepth);
-		if(pos->nDistance == 0)
-		{
-			// 搜索根节点时，总是有一个最佳走法(因为全窗口搜索不会超出边界)，将这个走法保存下来
-			sd->mvResult = mvBest;
-			//L << "history" << mvBest;
-		}
+//		if(pos->nDistance == 0)
+//		{
+//			// 搜索根节点时，总是有一个最佳走法(因为全窗口搜索不会超出边界)，将这个走法保存下来
+//			sd->mvResult = mvBest;
+//			//L << "history" << mvBest;
+//		}
 	}
 	return vlBest;
 }
@@ -214,7 +228,8 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 // 迭代加深搜索过程
 void Search::SearchMain(void)
 {
-	int i, t, vl;
+	int i, t, vl, nGenMoves;
+	int mvs[MAX_GEN_MOVES];
 
 	// 初始化
 	memset(sd->nHistoryTable, 0, 65536 * sizeof(int)); // 清空历史表
@@ -223,10 +238,42 @@ void Search::SearchMain(void)
 	t = clock();       // 初始化定时器
 	pos->nDistance = 0; // 初始步数
 
+	// 搜索开局库
+	sd->mvResult = SearchBook();
+	if(sd->mvResult != 0)
+	{
+		pos->MakeMove(sd->mvResult);
+		if(pos->RepStatus(3) == 0)
+		{
+			pos->UndoMakeMove();
+			return;
+		}
+		pos->UndoMakeMove();
+	}
+
+	// 检查是否只有唯一走法
+	vl = 0;
+	nGenMoves = pos->GenerateMoves(mvs);
+	for(i = 0; i < nGenMoves; i ++)
+	{
+		if(pos->MakeMove(mvs[i]))
+		{
+			pos->UndoMakeMove();
+			sd->mvResult = mvs[i];
+			vl ++;
+		}
+	}
+	if(vl == 1)
+	{
+		return;
+	}
+
+
 	// 迭代加深过程
 	for(i = 1; i <= LIMIT_DEPTH; i ++)
 	{
-		vl = SearchFull(-MATE_VALUE, MATE_VALUE, i);
+		vl = SearchRoot(i);
+		//vl = SearchFull(-MATE_VALUE, MATE_VALUE, i);
 		// 搜索到杀棋，就终止搜索
 		if(vl > WIN_VALUE || vl < -WIN_VALUE)
 		{
@@ -239,6 +286,148 @@ void Search::SearchMain(void)
 			break;
 		}
 	}
+}
+
+void Search::LoadBook()
+{
+//	memcpy(Search.BookTable, LockResource(LoadResource(Xqwl.hInst, hrsrc)),
+//	       Search.nBookSize * sizeof(BookItem));
+
+	QFile bookFile(":/BOOK.DAT");  // 从资源文件中加载开局库数据
+	if(!bookFile.open(QIODevice::ReadOnly))
+	{
+		qWarning() << "Failed to open book resource file!";
+		return;
+	}
+
+	// 读取资源文件的大小
+	qint64 fileSize = bookFile.size();
+	sd->nBookSize = fileSize / sizeof(BookItem);  // 计算开局库项的数量
+
+	// 如果开局库大小超过最大限制，则截断
+	if(sd->nBookSize > BOOK_SIZE)
+	{
+		sd->nBookSize = BOOK_SIZE;
+	}
+
+	// 读取数据到开局库表
+	QDataStream in(&bookFile);
+	in.readRawData(reinterpret_cast<char*>(sd->BookTable), sd->nBookSize * sizeof(BookItem));
+
+	bookFile.close();  // 关闭文件
+}
+
+int Search::SearchBook()
+{
+	int i, vl, nBookMoves, mv;
+	int mvs[MAX_GEN_MOVES], vls[MAX_GEN_MOVES];
+	bool bMirror;
+	BookItem bkToSearch, *lpbk;
+	PositionStruct posMirror;
+	// 搜索开局库的过程有以下几个步骤
+
+	// 1. 如果没有开局库，则立即返回
+	if(sd->nBookSize == 0)
+	{
+		return 0;
+	}
+	// 2. 搜索当前局面
+	bMirror = false;
+	bkToSearch.dwLock = pos->zobr.dwLock1;
+	lpbk = (BookItem *) bsearch(&bkToSearch, sd->BookTable, sd->nBookSize, sizeof(BookItem), CompareBook);
+	// 3. 如果没有找到，那么搜索当前局面的镜像局面
+	if(lpbk == NULL)
+	{
+		bMirror = true;
+		pos->Mirror(posMirror);
+		bkToSearch.dwLock = posMirror.zobr.dwLock1;
+		lpbk = (BookItem *) bsearch(&bkToSearch, sd->BookTable, sd->nBookSize, sizeof(BookItem), CompareBook);
+	}
+	// 4. 如果镜像局面也没找到，则立即返回
+	if(lpbk == NULL)
+	{
+		return 0;
+	}
+	// 5. 如果找到，则向前查第一个开局库项
+	while(lpbk >= sd->BookTable && lpbk->dwLock == bkToSearch.dwLock)
+	{
+		lpbk --;
+	}
+	lpbk ++;
+	// 6. 把走法和分值写入到"mvs"和"vls"数组中
+	vl = nBookMoves = 0;
+	while(lpbk < sd->BookTable + sd->nBookSize && lpbk->dwLock == bkToSearch.dwLock)
+	{
+		mv = (bMirror ? MIRROR_MOVE(lpbk->wmv) : lpbk->wmv);
+		if(pos->LegalMove(mv))
+		{
+			mvs[nBookMoves] = mv;
+			vls[nBookMoves] = lpbk->wvl;
+			vl += vls[nBookMoves];
+			nBookMoves ++;
+			if(nBookMoves == MAX_GEN_MOVES)
+			{
+				break; // 防止"BOOK.DAT"中含有异常数据
+			}
+		}
+		lpbk ++;
+	}
+	if(vl == 0)
+	{
+		return 0; // 防止"BOOK.DAT"中含有异常数据
+	}
+	// 7. 根据权重随机选择一个走法
+	vl = rand() % vl;
+	for(i = 0; i < nBookMoves; i ++)
+	{
+		vl -= vls[i];
+		if(vl < 0)
+		{
+			break;
+		}
+	}
+	return mvs[i];
+}
+
+int Search::SearchRoot(int nDepth)
+{
+	int vl, vlBest, mv, nNewDepth;
+	SortStruct Sort = SortStruct(pos, sd);
+
+	vlBest = -MATE_VALUE;
+	Sort.Init(sd->mvResult);
+	while((mv = Sort.Next()) != 0)
+	{
+		if(pos->MakeMove(mv))
+		{
+			nNewDepth = pos->InCheck() ? nDepth : nDepth - 1;
+			if(vlBest == -MATE_VALUE)
+			{
+				vl = -SearchFull(-MATE_VALUE, MATE_VALUE, nNewDepth, NO_NULL);
+			}
+			else
+			{
+				vl = -SearchFull(-vlBest - 1, -vlBest, nNewDepth);
+				if(vl > vlBest)
+				{
+					vl = -SearchFull(-MATE_VALUE, -vlBest, nNewDepth, NO_NULL);
+				}
+			}
+			pos->UndoMakeMove();
+			if(vl > vlBest)
+			{
+				vlBest = vl;
+				sd->mvResult = mv;
+				if(vlBest > -WIN_VALUE && vlBest < WIN_VALUE)
+				{
+					vlBest += (rand() & RANDOM_MASK) - (rand() & RANDOM_MASK);
+				}
+			}
+		}
+	}
+	RecordHash(HASH_PV, vlBest, nDepth, sd->mvResult);
+	SetBestMove(sd->mvResult, nDepth);
+	return vlBest;
 }
 
 // 提取置换表项
@@ -257,11 +446,19 @@ int Search::ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv)
 	bMate = false;
 	if(hsh.svl > WIN_VALUE)
 	{
+		if(hsh.svl < BAN_VALUE)
+		{
+			return -MATE_VALUE; // 可能导致搜索的不稳定性，立刻退出，但最佳着法可能拿到
+		}
 		hsh.svl -= pos->nDistance;
 		bMate = true;
 	}
 	else if(hsh.svl < -WIN_VALUE)
 	{
+		if(hsh.svl > -BAN_VALUE)
+		{
+			return -MATE_VALUE; // 同上
+		}
 		hsh.svl += pos->nDistance;
 		bMate = true;
 	}
@@ -293,10 +490,18 @@ void Search::RecordHash(int nFlag, int vl, int nDepth, int mv)
 	hsh.ucDepth = nDepth;
 	if(vl > WIN_VALUE)
 	{
+		if(mv == 0 && vl <= BAN_VALUE)
+		{
+			return; // 可能导致搜索的不稳定性，并且没有最佳着法，立刻退出
+		}
 		hsh.svl = vl + pos->nDistance;
 	}
 	else if(vl < -WIN_VALUE)
 	{
+		if(mv == 0 && vl >= -BAN_VALUE)
+		{
+			return; // 同上
+		}
 		hsh.svl = vl - pos->nDistance;
 	}
 	else

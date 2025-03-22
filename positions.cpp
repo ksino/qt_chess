@@ -12,12 +12,13 @@ PositionStruct::PositionStruct()
 void PositionStruct::Startup(void)
 {
 	int sq, pc;
-	sdPlayer = 0;
-	vlWhite = 0;
-	vlBlack = 0;
-	nDistance = 0;
-	memset(ucpcSquares, 0, 256);
-	zobr.InitZero();
+//	sdPlayer = 0;
+//	vlWhite = 0;
+//	vlBlack = 0;
+//	nDistance = 0;
+//	memset(ucpcSquares, 0, 256);
+//	zobr.InitZero();
+	ClearBoard();
 	for(sq = 0; sq < 256; sq ++)
 	{
 		pc = cucpcStartup[sq];
@@ -528,4 +529,23 @@ int PositionStruct::RepStatus(int nRecur) const
 	return 0;
 }
 
+// 对局面镜像
+void PositionStruct::Mirror(PositionStruct &posMirror) const
+{
+	int sq, pc;
+	posMirror.ClearBoard();
+	for(sq = 0; sq < 256; sq ++)
+	{
+		pc = ucpcSquares[sq];
+		if(pc != 0)
+		{
+			posMirror.AddPiece(MIRROR_SQUARE(sq), pc);
+		}
+	}
+	if(sdPlayer == 1)
+	{
+		posMirror.ChangeSide();
+	}
+	posMirror.SetIrrev();
+}
 }

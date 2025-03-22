@@ -8,7 +8,7 @@
 using namespace std;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.5.2\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.6.0\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 // 窗口和绘图属性
@@ -40,15 +40,18 @@ const int MAX_GEN_MOVES = 128; // 最大的生成走法数
 const int MAX_MOVES = 256;     // 最大的历史走法数
 const int LIMIT_DEPTH = 64;    // 最大的搜索深度
 const int MATE_VALUE = 10000;  // 最高分值，即将死的分值
-const int WIN_VALUE = MATE_VALUE - 100; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
+const int BAN_VALUE = MATE_VALUE - 100; // 长将判负的分值，低于该值将不写入置换表
+const int WIN_VALUE = MATE_VALUE - 200; // 搜索出胜负的分值界限，超出此值就说明已经搜索出杀棋了
 const int DRAW_VALUE = 20;     // 和棋时返回的分数(取负值)
 const int ADVANCED_VALUE = 3;  // 先行权分值
+const int RANDOM_MASK = 7;     // 随机性分值
 const int NULL_MARGIN = 400;   // 空步裁剪的子力边界
 const int NULL_DEPTH = 2;      // 空步裁剪的裁剪深度
 const int HASH_SIZE = 1 << 20; // 置换表大小
 const int HASH_ALPHA = 1;      // ALPHA节点的置换表项
 const int HASH_BETA = 2;       // BETA节点的置换表项
 const int HASH_PV = 3;         // PV节点的置换表项
+const int BOOK_SIZE = 16384;   // 开局库大小
 // "GenerateMoves"参数
 const bool GEN_CAPTURE = true;
 // "SearchFull"的参数
@@ -545,7 +548,6 @@ public:
 	};
 	Q_ENUM(Sound)
 };
-
 
 
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
