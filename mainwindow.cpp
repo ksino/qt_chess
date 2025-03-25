@@ -13,6 +13,23 @@ MainWindow::~MainWindow()
 	delete m_board;
 }
 
+void MainWindow::checkWhoFirst()
+{
+	if(humanFirst->isChecked())
+	{
+		qDebug() << "玩家先走";
+	}
+	else if(computerFirst->isChecked())
+	{
+		qDebug() << "电脑先走";
+	}
+	else if(noComputer->isChecked())
+	{
+		qDebug() << "不用电脑";
+	}
+
+}
+
 void MainWindow::init()
 {
 //	this->setWindowTitle(cszAbout);
@@ -50,9 +67,16 @@ void MainWindow::setupUi()
 	whoFirstGroup->setLayout(whoFirstLayout);
 	rightLayout->addWidget(whoFirstGroup);
 
+	connect(humanFirst, &QRadioButton::toggled, this, &MainWindow::checkWhoFirst);
+	connect(computerFirst, &QRadioButton::toggled, this, &MainWindow::checkWhoFirst);
+	connect(noComputer, &QRadioButton::toggled, this, &MainWindow::checkWhoFirst);
+	humanFirst->setChecked(true);
+
+
 	// 2. 重新开始按钮
 	restartButton = new QPushButton("重新开始", this);
 	rightLayout->addWidget(restartButton);
+	connect(restartButton, &QPushButton::clicked, m_board, &Board::Restart);
 
 	// 3. 悔棋按钮
 	undoButton = new QPushButton("悔棋", this);
@@ -69,6 +93,7 @@ void MainWindow::setupUi()
 	computerLevelLayout->addWidget(professionalLevel);
 	computerLevelGroup->setLayout(computerLevelLayout);
 	rightLayout->addWidget(computerLevelGroup);
+	//connect(restartButton, &QPushButton::clicked, m_board, &Board::SetAiLevel);
 
 	// 5. 音效单选框
 	soundGroup = new QGroupBox("音效", this);

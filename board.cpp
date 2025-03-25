@@ -18,6 +18,12 @@ Board::~Board()
 	delete m_frameBoard;
 }
 
+void Board::Restart()
+{
+	this->Startup();
+	this->DrawBoard();
+}
+
 void Board::init()
 {
 	// 设定棋盘大小和坐标
@@ -29,7 +35,7 @@ void Board::init()
 // 初始化棋局
 void Board::Startup(void)
 {
-	qsrand(QDateTime::currentDateTime().toTime_t());
+	srand((quint32) time(NULL));
 	pos.Startup();
 	pos.InitZobrist();
 	sqSelected = 0;

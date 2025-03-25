@@ -22,6 +22,9 @@ public:
 	explicit Board(QWidget *parent = nullptr);
 	~Board();
 
+public slots:
+	void Restart();
+
 private slots:
 	// 点击格子事件处理
 	void ClickSquare(int sq);

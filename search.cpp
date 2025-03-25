@@ -290,9 +290,6 @@ void Search::SearchMain(void)
 
 void Search::LoadBook()
 {
-//	memcpy(Search.BookTable, LockResource(LoadResource(Xqwl.hInst, hrsrc)),
-//	       Search.nBookSize * sizeof(BookItem));
-
 	QFile bookFile(":/BOOK.DAT");  // 从资源文件中加载开局库数据
 	if(!bookFile.open(QIODevice::ReadOnly))
 	{
