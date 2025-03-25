@@ -8,16 +8,31 @@ PositionStruct::PositionStruct()
 
 }
 
-// 初始化棋盘
+/**
+ * @brief 清空棋盘
+ */
+void PositionStruct::ClearBoard()
+{
+	sdPlayer = vlWhite = vlBlack = nDistance = 0;
+	memset(ucpcSquares, 0, 256);
+	zobr.InitZero();
+}
+
+/**
+ * @brief 清空(初始化)历史走法信息
+ */
+void PositionStruct::SetIrrev()
+{
+	mvsList[0].Set(0, 0, Checked(), zobr.dwKey);
+	nMoveNum = 1;
+}
+
+/**
+ * @brief 初始化棋盘
+ */
 void PositionStruct::Startup(void)
 {
 	int sq, pc;
-//	sdPlayer = 0;
-//	vlWhite = 0;
-//	vlBlack = 0;
-//	nDistance = 0;
-//	memset(ucpcSquares, 0, 256);
-//	zobr.InitZero();
 	ClearBoard();
 	for(sq = 0; sq < 256; sq ++)
 	{
@@ -30,7 +45,103 @@ void PositionStruct::Startup(void)
 	SetIrrev();
 }
 
-// 搬一步棋的棋子 返回目标格子的值
+void PositionStruct::InitZobrist()
+{
+	zobrist.InitZobrist();
+}
+
+/**
+ * @brief 取得格子上的棋子值
+ * @param sq
+ * @return
+ */
+uint8_t PositionStruct::GetSquare(int sq)
+{
+	return ucpcSquares[sq];
+}
+
+/**
+ * @brief 交换走子方
+ */
+void PositionStruct::ChangeSide()
+{
+	sdPlayer = 1 - sdPlayer;
+	zobr.Xor(zobrist.Player);
+}
+
+/**
+ * @brief 在棋盘上放一枚棋子
+ * @param sq
+ * @param pc
+ */
+void PositionStruct::AddPiece(int sq, int pc)
+{
+	ucpcSquares[sq] = pc;
+	// 红方加分，黑方(注意"cucvlPiecePos"取值要颠倒)减分
+	if(pc < 16)
+	{
+		vlWhite += cucvlPiecePos[pc - 8][sq];
+		zobr.Xor(zobrist.Table[pc - 8][sq]);
+	}
+	else
+	{
+		vlBlack += cucvlPiecePos[pc - 16][SQUARE_FLIP(sq)];
+		zobr.Xor(zobrist.Table[pc - 9][sq]);
+	}
+}
+
+/**
+ * @brief 从棋盘上拿走一枚棋子
+ * @param sq
+ * @param pc
+ */
+void PositionStruct::DelPiece(int sq, int pc)
+{
+	ucpcSquares[sq] = 0;
+	// 红方减分，黑方(注意"cucvlPiecePos"取值要颠倒)加分
+	if(pc < 16)
+	{
+		vlWhite -= cucvlPiecePos[pc - 8][sq];
+		zobr.Xor(zobrist.Table[pc - 8][sq]);
+	}
+	else
+	{
+		vlBlack -= cucvlPiecePos[pc - 16][SQUARE_FLIP(sq)];
+		zobr.Xor(zobrist.Table[pc - 9][sq]);
+	}
+}
+
+/**
+ * @brief 局面评价函数
+ * @return
+ */
+int PositionStruct::Evaluate() const
+{
+	return (sdPlayer == 0 ? vlWhite - vlBlack : vlBlack - vlWhite) + ADVANCED_VALUE;
+}
+
+/**
+ * @brief 是否被将军
+ * @return
+ */
+bool PositionStruct::InCheck() const
+{
+	return mvsList[nMoveNum - 1].ucbCheck;
+}
+
+/**
+ * @brief 上一步是否吃子
+ * @return
+ */
+bool PositionStruct::Captured() const
+{
+	return mvsList[nMoveNum - 1].ucpcCaptured != 0;
+}
+
+/**
+ * @brief 搬一步棋的棋子 返回目标格子的值
+ * @return
+ */
 int PositionStruct::MovePiece(int mv)
 {
 	int sqSrc, sqDst, pc, pcCaptured;
@@ -47,7 +158,11 @@ int PositionStruct::MovePiece(int mv)
 	return pcCaptured;
 }
 
-// 撤消搬一步棋的棋子 还原起点和终点的格子值
+/**
+ * @brief 撤消搬一步棋的棋子 还原起点和终点的格子值
+ * @param mv
+ * @param pcCaptured
+ */
 void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 {
 	int sqSrc, sqDst, pc;
@@ -62,7 +177,11 @@ void PositionStruct::UndoMovePiece(int mv, int pcCaptured)
 	}
 }
 
-// 走一步棋
+/**
+ * @brief 走一步棋
+ * @param mv
+ * @return
+ */
 bool PositionStruct::MakeMove(int mv)
 {
 	int pcCaptured;
@@ -86,7 +205,46 @@ bool PositionStruct::MakeMove(int mv)
 	return true;
 }
 
-// 生成所有走法，如果"bCapture"为"TRUE"则只生成吃子走法
+/**
+ * @brief 撤消走一步棋
+ */
+void PositionStruct::UndoMakeMove()
+{
+	nDistance --;
+	nMoveNum --;
+	ChangeSide();
+	UndoMovePiece(mvsList[nMoveNum].wmv, mvsList[nMoveNum].ucpcCaptured);
+}
+
+/**
+ * @brief 走一空步
+ */
+void PositionStruct::NullMove()
+{
+	quint32  dwKey;
+	dwKey = zobr.dwKey;
+	ChangeSide();
+	mvsList[nMoveNum].Set(0, 0, false, dwKey);
+	nMoveNum ++;
+	nDistance ++;
+}
+
+/**
+ * @brief 撤消走一步空步
+ */
+void PositionStruct::UndoNullMove()
+{
+	nDistance --;
+	nMoveNum --;
+	ChangeSide();
+}
+
+/**
+ * @brief 生成所有走法，如果"bCapture"为"TRUE"则只生成吃子走法
+ * @param mvs
+ * @param bCapture
+ * @return
+ */
 int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 {
 	int i, j, nGenMoves, nDelta, sqSrc, sqDst;
@@ -285,7 +443,11 @@ int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 	return nGenMoves;
 }
 
-// 判断走法是否合理
+/**
+ * @brief 判断走法是否合理
+ * @param mv
+ * @return
+ */
 bool PositionStruct::LegalMove(int mv) const
 {
 	int sqSrc, sqDst, sqPin;
@@ -378,7 +540,10 @@ bool PositionStruct::LegalMove(int mv) const
 	}
 }
 
-// 判断是否被将军
+/**
+ * @brief 判断是否被将军
+ * @return
+ */
 bool PositionStruct::Checked() const
 {
 	int i, j, sqSrc, sqDst;
@@ -471,7 +636,10 @@ bool PositionStruct::Checked() const
 	return false;
 }
 
-// 判断sdPlayer方是否被杀
+/**
+ * @brief 判断sdPlayer方是否被杀
+ * @return
+ */
 bool PositionStruct::IsMate(void)
 {
 	int i, nGenMoveNum, pcCaptured;
@@ -496,7 +664,20 @@ bool PositionStruct::IsMate(void)
 	return true;
 }
 
-// 检测重复局面
+/**
+ * @brief 和棋分值
+ * @return
+ */
+int PositionStruct::DrawValue() const
+{
+	return (nDistance & 1) == 0 ? -DRAW_VALUE : DRAW_VALUE;
+}
+
+/**
+ * @brief 检测重复局面
+ * @param nRecur
+ * @return
+ */
 int PositionStruct::RepStatus(int nRecur) const
 {
 	bool bSelfSide, bPerpCheck, bOppPerpCheck;
@@ -529,7 +710,32 @@ int PositionStruct::RepStatus(int nRecur) const
 	return 0;
 }
 
-// 对局面镜像
+/**
+ * @brief 重复局面分值
+ * @param nRepStatus
+ * @return
+ */
+int PositionStruct::RepValue(int nRepStatus) const
+{
+	int vlReturn;
+	vlReturn = ((nRepStatus & 2) == 0 ? 0 : nDistance - BAN_VALUE) +
+	           ((nRepStatus & 4) == 0 ? 0 : BAN_VALUE - nDistance);
+	return vlReturn == 0 ? DrawValue() : vlReturn;
+}
+
+/**
+ * @brief 判断是否允许空步裁剪
+ * @return
+ */
+bool PositionStruct::NullOkay() const
+{
+	return (sdPlayer == 0 ? vlWhite : vlBlack) > NULL_MARGIN;
+}
+
+/**
+ * @brief 对局面镜像
+ * @param posMirror
+ */
 void PositionStruct::Mirror(PositionStruct &posMirror) const
 {
 	int sq, pc;

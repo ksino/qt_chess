@@ -15,6 +15,14 @@
 namespace Chess
 {
 
+// 窗口和绘图属性
+const int SQUARE_SIZE = 56;
+// 棋盘的边距
+const int BOARD_EDGE = 8;
+// 棋盘10行9列
+const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
+const int BOARD_HEIGHT = BOARD_EDGE + SQUARE_SIZE * 10 + BOARD_EDGE;
+
 class Board : public QWidget
 {
 	Q_OBJECT

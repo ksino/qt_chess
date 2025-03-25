@@ -7,17 +7,7 @@
 
 using namespace std;
 
-// 版本号
-const QString cszAbout = "象棋小巫师 0.7.0\n象棋百科全书 荣誉出品\n\n"
-                         "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
-// 窗口和绘图属性
-const int SQUARE_SIZE = 56;
-// 棋盘的边距
-const int BOARD_EDGE = 8;
-// 棋盘10行9列
-const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
-const int BOARD_HEIGHT = BOARD_EDGE + SQUARE_SIZE * 10 + BOARD_EDGE;
 
 // 棋盘范围
 // 棋盘（数组）的左上角在16x16的起点（4行4列）
@@ -117,6 +107,11 @@ static const char ccInFort[256] =
 };
 
 // 判断步长是否符合特定走法的数组，1=帅(将)，2=仕(士)，3=相(象)
+// 之所以用一个512数组作判断，是因为-255 <= sqDst - sqSrc <= 255
+// 从最大格子走到最小格子，差值为-255
+// 从最小格子走到最大格子，差值为255
+// 作为一个数组，负数是无法作为索引，将数组扩大成512，然后将两格之差偏移256就能保证是正索引
+// 即 -255 + 256 < sqDst - sqSrc + 256 < 255 + 256
 static const char ccLegalSpan[512] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -426,21 +421,21 @@ inline int SQUARE_FORWARD(int sq, int sd)
 }
 
 // 走法是否符合帅(将)的步长
+// sq之差符合{-1, 1, -16, 16}偏移
 inline bool KING_SPAN(int sqSrc, int sqDst)
 {
-	//之所以是一个512数组，是因为-255 < sqDst - sqSrc < 255
-	//如果是符合的走法，必是在索引256的 {1, -1, 16, -16}偏移
 	return ccLegalSpan[sqDst - sqSrc + 256] == 1;
 }
 
 // 走法是否符合仕(士)的步长
+// sq之差符合{-17, -15, 15, 17}偏移
 inline bool ADVISOR_SPAN(int sqSrc, int sqDst)
 {
-	//{-17, -15, 15, 17}
 	return ccLegalSpan[sqDst - sqSrc + 256] == 2;
 }
 
 // 走法是否符合相(象)的步长
+// sq之差符合{-34, -30, 30, 34}偏移
 inline bool BISHOP_SPAN(int sqSrc, int sqDst)
 {
 	return ccLegalSpan[sqDst - sqSrc + 256] == 3;
