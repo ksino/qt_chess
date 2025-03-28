@@ -23,12 +23,36 @@ const int BOARD_EDGE = 8;
 const int BOARD_WIDTH = BOARD_EDGE + SQUARE_SIZE * 9 + BOARD_EDGE;
 const int BOARD_HEIGHT = BOARD_EDGE + SQUARE_SIZE * 10 + BOARD_EDGE;
 
+class Resource: public QObject
+{
+	Q_OBJECT
+public:
+	explicit Resource(QObject *parent = nullptr);
+
+	enum Sound
+	{
+		click,
+		capture,
+		capture2,
+		draw,
+		move,
+		move2,
+		win,
+		check,
+		check2,
+		illegal,
+		loss
+	};
+	Q_ENUM(Sound)
+};
+
 class Board : public QWidget
 {
 	Q_OBJECT
 public:
 	explicit Board(QWidget *parent = nullptr);
 	~Board();
+	void SetComputerFirst(bool ok);
 
 public slots:
 	void Restart();
@@ -48,7 +72,7 @@ private:
 	int sqSelected;
 	//上一步棋 通过将终点索引左移8位，和起点拼成一个数(dest << 8 | src)
 	int mvLast;
-	// 是否翻转棋盘
+	// 为true时，电脑先手，玩家后手，将黑色方的棋盘翻转在下面
 	bool bFlipped {false};
 	bool bGameOver;  // 是否游戏结束(不让继续玩下去)
 	PositionStruct pos; // 局面实例
@@ -57,6 +81,7 @@ private:
 	//棋盘格子数组
 	Square* square[256];
 	Search *search {nullptr};
+	int computer;
 
 private:
 	void init();

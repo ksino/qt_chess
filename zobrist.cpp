@@ -1,4 +1,5 @@
 #include "zobrist.h"
+#include <QSet>
 
 
 // 用空密钥初始化RC4状态数组
@@ -27,12 +28,15 @@ void RC4Struct::InitZero()
 quint8 RC4Struct::NextByte()
 {
 	quint8 uc;
-	x = (x + 1) & 255;  // x = (x + 1) mod 256
-	y = (y + s[x]) & 255;  // y = (y + s[x]) mod 256
+	// x每次增加1 由0到255循环
+	x = (x + 1) & 255;
+	// y = (y + s[x]) mod 256
+	y = (y + s[x]) & 255;
+	// 交换s[x]和s[y]
 	uc = s[x];
-	s[x] = s[y];  // 交换s[x]和s[y]
+	s[x] = s[y];
 	s[y] = uc;
-	return s[(s[x] + s[y]) & 255];  // 返回s[(s[x] + s[y]) mod 256]
+	return s[(s[x] + s[y]) & 255];
 }
 
 // 生成下一个32位伪随机数（4个字节）
@@ -85,6 +89,7 @@ void Zobrist::InitZobrist()
 {
 	int i, j;
 	RC4Struct rc4;
+	QSet<quint32> keySet;  // 存储dwKey以检查重复
 
 	rc4.InitZero();  // 初始化RC4状态
 	Player.InitRC4(rc4);  // 使用RC4生成的随机数初始化Player

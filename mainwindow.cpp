@@ -10,23 +10,26 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-	delete m_board;
+	delete board;
 }
 
 void MainWindow::checkWhoFirst()
 {
+	bool first = false;
 	if(humanFirst->isChecked())
 	{
 		qDebug() << "玩家先走";
 	}
 	else if(computerFirst->isChecked())
 	{
+		first = true;
 		qDebug() << "电脑先走";
 	}
 	else if(noComputer->isChecked())
 	{
 		qDebug() << "不用电脑";
 	}
+	board->SetComputerFirst(first);
 
 }
 
@@ -49,7 +52,7 @@ void MainWindow::setupUi()
 	this->setWindowTitle(cszAbout);
 	chessWidget = new QWidget(this);
 	//新建棋盘实例
-	m_board = new Board(chessWidget);
+	board = new Board(chessWidget);
 	mainLayout->addWidget(chessWidget, 8);
 
 	// 右边显示选项
@@ -76,7 +79,7 @@ void MainWindow::setupUi()
 	// 2. 重新开始按钮
 	restartButton = new QPushButton("重新开始", this);
 	rightLayout->addWidget(restartButton);
-	connect(restartButton, &QPushButton::clicked, m_board, &Board::Restart);
+	connect(restartButton, &QPushButton::clicked, board, &Board::Restart);
 
 	// 3. 悔棋按钮
 	undoButton = new QPushButton("悔棋", this);

@@ -2,12 +2,13 @@
 #define ZOBRISTSTRUCT_H
 
 #include <QtGlobal>
+#include "const_data.h"
 
 // RC4Struct类：实现RC4流密码算法，用于生成伪随机字节流
 class RC4Struct
 {
 public:
-	quint8 s[256];  // RC4的状态数组，包含256个字节
+	quint8 s[256];  // RC4的状态数组
 	int x, y;       // 两个状态变量，用于生成伪随机字节
 
 	void InitZero();       // 用空密钥初始化RC4状态数组

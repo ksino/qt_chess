@@ -10,7 +10,8 @@ namespace Chess
 struct BookItem
 {
 	quint32 dwLock;
-	quint16 wmv, wvl;
+	quint16 wmv;
+	quint16 wvl;
 };
 
 struct HashItem
@@ -25,7 +26,7 @@ struct HashItem
 };
 
 // 与搜索有关的变量
-struct SearchData
+struct SearchContext
 {
 	int mvResult;                  // 电脑走的棋
 	int nHistoryTable[65536];      // 历史表
@@ -47,24 +48,13 @@ static int CompareBook(const void *lpbk1, const void *lpbk2)
 class SortStruct
 {
 public:
-	SortStruct(PositionStruct *pos, SearchData *sd)
-		: pos(pos), sd(sd)
-	{
-	}
-
-	// 得到下一个走法
-	void Init(int mvHash_)   // 初始化，设定置换表走法和两个杀手走法
-	{
-		mvHash = mvHash_;
-		mvKiller1 = sd->mvKillers[pos->nDistance][0];
-		mvKiller2 = sd->mvKillers[pos->nDistance][1];
-		nPhase = PHASE_HASH;
-	}
-	int Next();
+	SortStruct(PositionStruct *pos, SearchContext *context);
+	void Init(int mvHash_); // 初始化，设定置换表走法和两个杀手走法
+	int Next();             // 得到下一个走法
 
 private:
 	PositionStruct *pos; // 指向 Position 实例的指针
-	SearchData *sd;
+	SearchContext *context;
 	int mvHash;    // 置换表走法
 	int mvKiller1, mvKiller2; // 两个杀手走法
 	int nPhase;    // 当前阶段
@@ -89,21 +79,22 @@ class Search
 public:
 	Search(PositionStruct &pos);
 	PositionStruct *pos;
-	SearchData *sd {nullptr};
-	int SearchQuiesc(int vlAlpha, int vlBeta);
-	int SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false);
+	SearchContext *context {nullptr};
+	int mvKillers[LIMIT_DEPTH][2]; // 杀手走法表
+	HashItem HashTable[HASH_SIZE]; // 置换表
+
 	void SearchMain(void);
 	void LoadBook(void);
 	int SearchBook(void);
 	// 根节点的Alpha-Beta搜索过程
 	int SearchRoot(int nDepth);
+	int SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull = false);
+	int SearchQuiesc(int vlAlpha, int vlBeta);
 	// 求MVV/LVA值
 	inline int MvvLva(int mv)
 	{
 		return (cucMvvLva[pos->ucpcSquares[DST(mv)]] << 3) - cucMvvLva[pos->ucpcSquares[SRC(mv)]];
 	}
-	int mvKillers[LIMIT_DEPTH][2]; // 杀手走法表
-	HashItem HashTable[HASH_SIZE]; // 置换表
 	int ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv); // 提取置换表项
 	void RecordHash(int nFlag, int vl, int nDepth, int mv); // 保存置换表项
 
@@ -111,8 +102,8 @@ public:
 	inline void SetBestMove(int mv, int nDepth)
 	{
 		int *lpmvKillers;
-		sd->nHistoryTable[mv] += nDepth * nDepth;
-		lpmvKillers = sd->mvKillers[pos->nDistance];
+		context->nHistoryTable[mv] += nDepth * nDepth;
+		lpmvKillers = context->mvKillers[pos->nDistance];
 		if(lpmvKillers[0] != mv)
 		{
 			lpmvKillers[1] = lpmvKillers[0];

@@ -35,9 +35,9 @@ public:
 	int vlWhite, vlBlack;           // 红、黑双方的子力价值
 	int nDistance;                  // 距离根节点的步数
 	int nMoveNum;        // 历史走法数
-	Zobrist zobrist;
+	Zobrist zobrist;                // 储存每个棋子在棋盘每个位置的伪随机值（每次生成的值都是固定的），用于局面变动时，根据棋子及其位置取出随机值进行异或，生成新局面的随机值
 	MoveStruct mvsList[MAX_MOVES];  // 历史走法信息列表
-	ZobristStruct zobr;             // Zobrist
+	ZobristStruct zobr;             // 代表当前局面的Zobrist哈希值 通过AddPiece和DelPiece来更新
 
 	void ClearBoard(void);           // 清空棋盘
 	void SetIrrev(void);             // 清空(初始化)历史走法信息
@@ -50,12 +50,12 @@ public:
 	int Evaluate(void) const;        // 局面评价函数
 	bool InCheck(void) const;        // 是否被将军
 	bool Captured(void) const;       // 上一步是否吃子
-	int MovePiece(int mv);                      // 搬一步棋的棋子
+	int MovePiece(int mv);                       // 搬一步棋的棋子
 	void UndoMovePiece(int mv, int pcCaptured); // 撤消搬一步棋的棋子
 	bool MakeMove(int mv);                      // 走一步棋
-	void UndoMakeMove(void);   // 撤消走一步棋
-	void NullMove(void);                         // 走一步空步
-	void UndoNullMove(void);                     // 撤消走一步空步
+	void UndoMakeMove(void);                    // 撤消走一步棋
+	void NullMove(void);                        // 走一步空步
+	void UndoNullMove(void);                    // 撤消走一步空步
 
 	// 生成所有走法，如果"bCapture"为"TRUE"则只生成吃子走法
 	int GenerateMoves(int *mvs, bool bCapture = false) const;

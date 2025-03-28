@@ -25,7 +25,7 @@ QT_END_NAMESPACE
 using namespace Chess;
 
 // 版本号
-const QString cszAbout = "象棋小巫师 0.7.1\n象棋百科全书 荣誉出品\n\n"
+const QString cszAbout = "象棋小巫师 0.7.2\n象棋百科全书 荣誉出品\n\n"
                          "欢迎登录 www.xqbase.com\n免费下载PC版 象棋巫师";
 
 class MainWindow : public QMainWindow
@@ -64,7 +64,7 @@ private:
 	QRadioButton *animationOn;
 	QRadioButton *animationOff;
 	QTextEdit *moveHistory;
-	Board *m_board;
+	Board *board;
 
 private:
 	void init();

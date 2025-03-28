@@ -521,30 +521,6 @@ inline int MIRROR_MOVE(int mv)
 }
 
 
-class Resource: public QObject
-{
-	Q_OBJECT
-public:
-	explicit Resource(QObject *parent = nullptr);
-
-	enum Sound
-	{
-		click,
-		capture,
-		capture2,
-		draw,
-		move,
-		move2,
-		win,
-		check,
-		check2,
-		illegal,
-		loss
-	};
-	Q_ENUM(Sound)
-};
-
-
 #define L qDebug() << "[" << __FILE__ << ":" << __LINE__ << ":" << __func__ << "]"
 // 不显示图片
 #define HIDE_PICTURE 1
@@ -565,7 +541,7 @@ inline void move2Iccs(int pc, int mv)
 }
 
 // 打印数组
-inline void _print(int *mv, int len)
+inline void print_(int *mv, int len)
 {
 	auto qdebug = QDebug(QtDebugMsg);   // 这种直接一点，构造一个QDebug()对象
 	qdebug << len << " [";

@@ -188,7 +188,7 @@ bool PositionStruct::MakeMove(int mv)
 	quint32 dwKey;
 
 	dwKey = zobr.dwKey;
-	// 实现mv这步走法
+	// 执行mv这步走法
 	pcCaptured = MovePiece(mv);
 	if(Checked())
 	{
@@ -345,13 +345,16 @@ int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 		case PIECE_ROOK: //车
 			for(i = 0; i < 4; i ++)
 			{
+				// 沿车的四个方向，逐步判断
 				nDelta = ccKingDelta[i];
 				sqDst = sqSrc + nDelta;
+				// 判断sqDst是否在棋盘内
 				while(IN_BOARD(sqDst))
 				{
 					pcDst = ucpcSquares[sqDst];
 					if(pcDst == 0)
 					{
+						// 移动的位置是是空格
 						if(!bCapture)
 						{
 							mvs[nGenMoves] = MOVE(sqSrc, sqDst);
@@ -360,6 +363,7 @@ int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 					}
 					else
 					{
+						// 移动的位置有棋子存在（若是对方的子可以吃掉），当前方向不能再往前
 						if((pcDst & pcOppSide) != 0)
 						{
 							mvs[nGenMoves] = MOVE(sqSrc, sqDst);
@@ -367,6 +371,7 @@ int PositionStruct::GenerateMoves(int *mvs, bool bCapture) const
 						}
 						break;
 					}
+					// 继续搜索当前方向
 					sqDst += nDelta;
 				}
 			}
@@ -674,37 +679,56 @@ int PositionStruct::DrawValue() const
 }
 
 /**
- * @brief 检测重复局面
- * @param nRecur
+ * @brief 检查当前局面是否重复出现，并返回重复状态
+ * @param nRecur - 需要检测的重复次数（通常为3，表示三次重复局面判和）
  * @return
+ *   0 - 无重复
+ *   1 - 普通重复局面
+ *   3 (1+2) - 重复且本方连续将军
+ *   5 (1+4) - 重复且对方连续将军
+ *   7 (1+2+4) - 双方都在连续将军
  */
 int PositionStruct::RepStatus(int nRecur) const
 {
-	bool bSelfSide, bPerpCheck, bOppPerpCheck;
-	const MoveStruct *lpmvs;
+	bool bSelfSide;      // 当前是否是本方走棋的回合
+	bool bPerpCheck;     // 本方是否一直在将军对方
+	bool bOppPerpCheck;  // 对方是否一直在将军本方
+	const MoveStruct *lpmvs; // 用于遍历走法历史的指针
 
-	bSelfSide = false;
-	bPerpCheck = bOppPerpCheck = true;
-	lpmvs = mvsList + nMoveNum - 1;
+	bSelfSide = false;  // 从对方回合开始检查（因为最新走法是对方走的）
+	bPerpCheck = bOppPerpCheck = true; // 初始假设双方都在连续将军
+	lpmvs = mvsList + nMoveNum - 1; // 指向最新的走法记录
+
+	// 遍历走法历史（从最新到最旧）
+	// 条件：只考虑没有吃子的走法（吃子后不可能重复局面）
 	while(lpmvs->wmv != 0 && lpmvs->ucpcCaptured == 0)
 	{
-		if(bSelfSide)
+		if(bSelfSide) // 当前是本方走棋回合的记录
 		{
+			// 更新本方连续将军状态（所有本方走法都必须包含将军）
 			bPerpCheck = bPerpCheck && lpmvs->ucbCheck;
+			// 检查局面是否重复（比较Zobrist键值）
 			if(lpmvs->dwKey == zobr.dwKey)
 			{
-				nRecur --;
-				if(nRecur == 0)
+				nRecur --; // 找到一次重复
+				if(nRecur == 0) // 达到要求的重复次数
 				{
+					// 返回复合状态值：
+					// 1 - 基本重复标志
+					// +2 - 本方连续将军
+					// +4 - 对方连续将军
 					return 1 + (bPerpCheck ? 2 : 0) + (bOppPerpCheck ? 4 : 0);
 				}
 			}
 		}
-		else
+		else // 当前是对方走棋回合的记录
 		{
+			// 更新对方连续将军状态
 			bOppPerpCheck = bOppPerpCheck && lpmvs->ucbCheck;
 		}
+		// 更新对方连续将军状态
 		bSelfSide = !bSelfSide;
+		// 移动到前一个走法记录
 		lpmvs --;
 	}
 	return 0;

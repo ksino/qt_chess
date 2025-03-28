@@ -18,10 +18,18 @@ Board::~Board()
 	delete m_frameBoard;
 }
 
+void Board::SetComputerFirst(bool ok)
+{
+	bFlipped = ok;
+}
+
 void Board::Restart()
 {
+	// TODO bug 此函数点击没有显示背景
 	this->Startup();
 	this->DrawBoard();
+	if(bFlipped)
+		this->ResponseMove();
 }
 
 void Board::init()
@@ -96,7 +104,11 @@ int Board::SQ_Y(int sq)
 	return BOARD_EDGE + (RANK_Y(sq) - RANK_TOP) * SQUARE_SIZE;
 }
 
-// 绘制格子
+/**
+ * @brief 绘制格子图片
+ * @param sq 索引
+ * @param bSelected true显示选中背景
+ */
 void Board::DrawSquare(int sq, bool bSelected)
 {
 	// 玩家是黑方（后手）的话，翻转棋盘
@@ -174,6 +186,7 @@ void Board::ClickSquare(int sq)
 				mvLast = mv;
 				// pos.MakeMove(mv)已经更新ucpcSquares
 				// 现在刷新走棋界面
+				// TODO 由于AI执行search->SearchMain()的耗时操作 线程阻塞
 				DrawSquare(sqSelected, DRAW_SELECTED);
 				DrawSquare(sq, DRAW_SELECTED);
 				sqSelected = 0;
@@ -229,18 +242,21 @@ void Board::ResponseMove(void)
 {
 	L << "ResponseMove";
 	int vlRep;
-	int pcCaptured;
 	// 电脑走一步棋
 	search->SearchMain();
-	pos.MakeMove(search->sd->mvResult);
+	pos.MakeMove(search->context->mvResult);
 	// 清除上一步棋的选择标记
-	DrawSquare(SRC(mvLast));
-	DrawSquare(DST(mvLast));
+	if(mvLast != 0)
+	{
+		DrawSquare(SRC(mvLast));
+		DrawSquare(DST(mvLast));
+	}
 	// 把电脑走的棋标记出来
-	mvLast = search->sd->mvResult;
+	mvLast = search->context->mvResult;
 	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);
+	L << "02";
 	// 检查重复局面
 	vlRep = pos.RepStatus(3);
 	if(pos.IsMate())
