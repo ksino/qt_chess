@@ -256,7 +256,6 @@ void Board::ResponseMove(void)
 	move2Iccs(pos.GetSquare(DST(mvLast)), mvLast);
 	DrawSquare(SRC(mvLast), DRAW_SELECTED);
 	DrawSquare(DST(mvLast), DRAW_SELECTED);
-	L << "02";
 	// 检查重复局面
 	vlRep = pos.RepStatus(3);
 	if(pos.IsMate())

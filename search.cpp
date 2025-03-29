@@ -249,6 +249,7 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 	// 1. 到达水平线，则调用静态搜索(注意：由于空步裁剪，深度可能小于零)
 	if(nDepth <= 0)
 	{
+		L << "go to SearchQuiesc" << pos->nDistance;
 		return SearchQuiesc(vlAlpha, vlBeta);
 	}
 
@@ -354,6 +355,18 @@ int Search::SearchFull(int vlAlpha, int vlBeta, int nDepth, bool bNoNull)
 	return vlBest;
 }
 
+/**
+ * @brief 静态搜索的核心目标是 高效解决“地平线效应”，即在普通搜索深度耗尽（nDepth <= 0）时，
+ * 避免因停止搜索而漏算关键战术动作（如吃子、将军等）,
+ * 非战术走法（如移动兵、调整棋子位置）通常不会立即改变局面价值。
+ * 静态评估函数（Evaluate）对这些局面的评分已经足够准确，无需进一步搜索。
+ * 战术局面的“非静止性”
+ * 吃子、将军、升变等走法会直接改变子力平衡或胜负状态：
+ * 如果仅依赖静态评估，引擎会严重误判这些局面的真实价值。
+ * @param vlAlpha
+ * @param vlBeta
+ * @return
+ */
 int Search::SearchQuiesc(int vlAlpha, int vlBeta)
 {
 	int i, nGenMoves;
@@ -441,12 +454,21 @@ int Search::SearchQuiesc(int vlAlpha, int vlBeta)
 }
 
 // 提取置换表项
+/**
+ * @brief Search::ProbeHash
+ * @param vlAlpha
+ * @param vlBeta
+ * @param nDepth
+ * @param mv
+ * @return
+ */
 int Search::ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv)
 {
 	bool bMate; // 杀棋标志：如果是杀棋，那么不需要满足深度条件
-	HashItem hsh;
 
-	hsh = HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)];
+	// 计算hash条目位置
+	HashItem hsh = HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)];
+	// 计算hash条目有效性
 	if(hsh.dwLock0 != pos->zobr.dwLock0 || hsh.dwLock1 != pos->zobr.dwLock1)
 	{
 		mv = 0;
@@ -454,6 +476,7 @@ int Search::ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv)
 	}
 	mv = hsh.wmv;
 	bMate = false;
+	// 杀棋分数处理
 	if(hsh.svl > WIN_VALUE)
 	{
 		if(hsh.svl < BAN_VALUE)
@@ -487,23 +510,34 @@ int Search::ProbeHash(int vlAlpha, int vlBeta, int nDepth, int &mv)
 	return -MATE_VALUE;
 }
 
-// 保存置换表项
+/**
+ * @brief 将搜索结果存入置换表(Transposition Table)，实现高效的信息缓存和重用机制。
+ * @param nFlag 节点类型标记
+ * @param vl 搜索得到分值
+ * @param nDepth 搜索深度
+ * @param mv 最佳走法
+ */
 void Search::RecordHash(int nFlag, int vl, int nDepth, int mv)
 {
 	HashItem hsh;
+	// 使用Zobrist哈希值的前20位位作为索引
+	// dwKey(32位) & HASH_SIZE - 1(20位）
 	hsh = HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)];
 	if(hsh.ucDepth > nDepth)
 	{
+		// 已有更深搜索结果，不覆盖
 		return;
 	}
 	hsh.ucFlag = nFlag;
 	hsh.ucDepth = nDepth;
 	if(vl > WIN_VALUE)
 	{
+		// 没有最佳走法(mv==0)且分数接近边界时不存储（避免污染）
 		if(mv == 0 && vl <= BAN_VALUE)
 		{
 			return; // 可能导致搜索的不稳定性，并且没有最佳着法，立刻退出
 		}
+		// 将杀棋分数转换为与距离相关的具体值
 		hsh.svl = vl + pos->nDistance;
 	}
 	else if(vl < -WIN_VALUE)
@@ -518,9 +552,11 @@ void Search::RecordHash(int nFlag, int vl, int nDepth, int mv)
 	{
 		hsh.svl = vl;
 	}
+	// 写入当前数据
 	hsh.wmv = mv;
 	hsh.dwLock0 = pos->zobr.dwLock0;
 	hsh.dwLock1 = pos->zobr.dwLock1;
+	// 更新数据
 	HashTable[pos->zobr.dwKey & (HASH_SIZE - 1)] = hsh;
 }
 
